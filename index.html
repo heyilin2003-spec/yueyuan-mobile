@@ -83,6 +83,28 @@
   .avatar .dmg.block{ color:#8fd6ff; font-size:21px; text-shadow:0 2px 0 #0a3a55, 0 0 12px rgba(90,180,255,.7); }
   .avatar .dmg.gain{ color:#9fe6b5; font-size:23px; text-shadow:0 2px 0 #12452a, 0 0 12px rgba(90,230,140,.7); }
   .avatar .dmg.fire{ color:#ffb060; font-size:23px; text-shadow:0 2px 0 #6a2a00, 0 0 12px rgba(255,140,40,.7); }
+  /* 穿刺·撕裂命中特效 */
+  .avatar .flash.tear{ background:radial-gradient(circle at 50% 55%, rgba(255,60,60,.28), transparent 58%); }
+  .avatar .flash.tear::before, .avatar .flash.tear::after{
+    content:''; position:absolute; left:-8%; right:-8%; top:50%;
+    transform:rotate(-45deg) scaleX(0); transform-origin:50% 50%; border-radius:50%; }
+  .avatar .flash.tear::before{ height:3.8%; margin-top:-1.9%;
+    background:linear-gradient(90deg, rgba(255,60,60,0) 0%, rgba(255,70,70,.6) 16%, rgba(255,86,86,.72) 50%, rgba(255,70,70,.6) 84%, rgba(255,60,60,0) 100%); }
+  .avatar .flash.tear::after{ height:1.5%; margin-top:-0.75%;
+    background:linear-gradient(90deg, rgba(255,255,255,0) 4%, rgba(255,255,255,.98) 50%, rgba(255,255,255,0) 96%); }
+  .avatar .flash.tear.on{ animation:tearGlow .3s ease-out both; }
+  .avatar .flash.tear.on::before, .avatar .flash.tear.on::after{ animation:tearReveal .3s cubic-bezier(.15,.9,.25,1) both; }
+  @keyframes tearGlow{ 0%{opacity:0;} 12%{opacity:1;} 50%{opacity:.9;} 66%{opacity:0;} 100%{opacity:0;} }
+  @keyframes tearReveal{
+    0%{ transform:rotate(-45deg) scaleX(0); opacity:0; }
+    10%{ opacity:1; }
+    42%{ transform:rotate(-45deg) scaleX(1); opacity:1; }
+    56%{ opacity:.92; }
+    68%{ opacity:0; }
+    100%{ transform:rotate(-45deg) scaleX(1.03); opacity:0; }
+  }
+  /* 穿刺伤害数字：更大更亮 */
+  .avatar .dmg.pierce{ font-size:34px; color:#fff2f2; text-shadow:0 3px 0 #7a0f0f, 0 0 18px rgba(255,70,70,.95), 0 0 34px rgba(255,40,40,.6); }
   @keyframes dmgFloat{ 0%{opacity:0;transform:translate(-50%,10px) scale(.6);} 22%{opacity:1;transform:translate(-50%,-6px) scale(1.15);} 100%{opacity:0;transform:translate(-50%,-64px) scale(1);} }
 
   .me { --main:#3f8f5a; --main-dark:#2c6740; --skin:#f3c9a3; --wood:#8a5a2b; --leg:#41301f; --boot:#2c2016; }
@@ -151,28 +173,39 @@
   .foeback::after{ content:''; position:absolute; inset:11px; border-radius:5px; box-shadow:inset 0 0 0 2px rgba(255,255,255,.18); }
   /* 中央：对手最近打出的一张牌 */
   .playedbox{ margin-top:10px; display:flex; justify-content:center; min-height:104px; }
-  .playedbox .mini{ animation:playIn .45s cubic-bezier(.2,1.2,.4,1); }
+  .playedbox .mini{ width:84px; height:116px; animation:playIn .45s cubic-bezier(.2,1.2,.4,1); }
   @keyframes playIn{ 0%{ transform:translateY(12px) scale(.8); opacity:0; } 100%{ transform:none; opacity:1; } }
-  /* 手牌通用小卡 */
-  .mini{ width:74px; height:102px; border-radius:10px; background:linear-gradient(158deg,#fffdf7,#f4efe3);
-    border:1px solid rgba(0,0,0,.16); box-shadow:0 8px 16px rgba(0,0,0,.4), inset 0 0 0 2px rgba(255,255,255,.6);
-    position:relative; padding:7px 6px; display:flex; flex-direction:column; color:#20242a; transition:transform .14s, box-shadow .14s, opacity .2s; }
-  .mini .cc{ position:absolute; top:5px; left:7px; font-size:13px; font-weight:800; }
-  .mini .cn{ text-align:center; font-size:11px; font-weight:700; margin-top:2px; }
-  .mini .ca{ flex:1; margin:6px 2px; border-radius:7px; display:flex; align-items:center; justify-content:center; color:#fff; font-size:17px; font-weight:800; }
-  .mini .ce{ font-size:8.5px; line-height:1.3; text-align:center; color:#4a5158; }
-  .c-atk .ca{ background:linear-gradient(150deg,#e0574a,#a92c1e); } .c-atk .cc{ color:#c9412f; }
-  .c-mul .ca{ background:linear-gradient(150deg,#eda43f,#c06a12); } .c-mul .cc{ color:#d98524; }
-  .c-sta .ca{ background:linear-gradient(150deg,#9a6be0,#5a2fa0); } .c-sta .cc{ color:#7a49c7; }
-  .c-skl .ca{ background:linear-gradient(150deg,#4a9ac4,#1f5e85); } .c-skl .cc{ color:#2f7ba6; }
-  .c-pas .ca{ background:linear-gradient(150deg,#7b8cff,#3b4bc0); } .c-pas .cc{ color:#4a5ad0; }
-  .c-ctl .ca{ background:linear-gradient(150deg,#b06be0,#6a2fa0); } .c-ctl .cc{ color:#8a3fc7; }
+  /* 手牌通用小卡（整牌类型色 + 右下角角色名） */
+  .mini{ width:74px; height:102px; border-radius:10px; border:1px solid rgba(0,0,0,.18);
+    box-shadow:0 8px 16px rgba(0,0,0,.4), inset 0 0 0 2px rgba(255,255,255,.22);
+    position:relative; padding:6px 6px 5px; display:flex; flex-direction:column; color:#fff;
+    text-shadow:0 1px 2px rgba(0,0,0,.45); overflow:hidden;
+    transition:transform .14s, box-shadow .14s, opacity .2s; }
+  .mini .cc{ position:absolute; top:5px; left:6px; width:18px; height:18px; border-radius:50%;
+    background:rgba(0,0,0,.32); box-shadow:inset 0 0 0 1.2px rgba(255,255,255,.5);
+    display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; }
+  .mini .cn{ text-align:center; font-size:10.5px; font-weight:800; margin:1px 15px 0; line-height:1.2; }
+  .mini .sep{ height:1px; background:rgba(255,255,255,.35); border-radius:2px; margin:5px 1px; }
+  .mini .ce{ flex:1; display:flex; align-items:center; justify-content:center; text-align:center;
+    font-size:8.5px; line-height:1.35; font-weight:600; padding-bottom:12px; }
+  .mini .own-chip{ position:absolute; right:5px; bottom:4px; font-size:7.5px; font-weight:800; letter-spacing:.02em;
+    color:rgba(255,255,255,.95); background:rgba(0,0,0,.3); border-radius:999px; padding:1px 5px;
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.3); }
+  .mini .ca{ display:none !important; }
+  .mini.c-atk{ background:linear-gradient(158deg,#e0574a,#8f2114); }
+  .mini.c-mul{ background:linear-gradient(158deg,#eda43f,#a9590a); }
+  .mini.c-sta{ background:linear-gradient(158deg,#9a6be0,#4a2590); }
+  .mini.c-skl{ background:linear-gradient(158deg,#4a9ac4,#17496a); }
+  .mini.c-pas{ background:linear-gradient(158deg,#7b8cff,#3341b0); }
+  .mini.c-ctl{ background:linear-gradient(158deg,#b06be0,#5c2390); }
+  .mini .cc.cut{ box-shadow:inset 0 0 0 2px #7ff0b0; color:#d6ffe8; }
+  .mini .cc.cut::after{ content:'↓'; font-size:10px; margin-left:1px; }
 
   .hand{ position:absolute; left:388px; right:248px; bottom:22px; display:flex; flex-wrap:nowrap; gap:0; justify-content:center; align-items:flex-end; z-index:3; }
   .hand .mini{ width:96px; height:132px; flex:0 0 auto; margin-left:var(--ov,-46px); }
   .hand .mini:first-child{ margin-left:0; }
-  .hand .mini .cc{ font-size:15px; } .hand .mini .cn{ font-size:12.5px; }
-  .hand .mini .ca{ font-size:22px; margin:8px 3px; } .hand .mini .ce{ font-size:10px; }
+  .hand .mini .cc{ width:22px; height:22px; font-size:13px; } .hand .mini .cn{ font-size:12px; }
+  .hand .mini .ce{ font-size:10px; padding-bottom:13px; } .hand .mini .own-chip{ font-size:8.5px; padding:1px 6px; }
 
   .handactive .mini{ cursor:pointer; }
   .handactive .mini:hover{ transform:translateY(-11px); z-index:6; box-shadow:0 18px 30px rgba(0,0,0,.55), inset 0 0 0 3px rgba(255,255,255,.75); }
@@ -299,12 +332,13 @@
     background:linear-gradient(180deg,#123a2a,#0d2a1f); box-shadow:inset 0 0 0 1px rgba(255,255,255,.12), 0 20px 50px rgba(0,0,0,.55); }
   .dm-inner h3{ margin:0 0 16px; font-size:16px; letter-spacing:.2em; color:#e3ecf5; }
   .dm-grid{ display:flex; flex-wrap:wrap; gap:14px; justify-content:center; }
-  .dm-grid .mini{ width:118px; height:166px; padding:10px 9px 31px; }
-  .dm-grid .mini .cc{ font-size:18px; top:8px; left:11px; }
-  .dm-grid .mini .cn{ font-size:14px; margin-top:4px; }
-  .dm-grid .mini .ca{ font-size:26px; margin:9px 3px; }
-  .dm-grid .mini .ce{ font-size:11px; line-height:1.4; }
-  .dm-grid .mini .cnt{ position:absolute; right:9px; bottom:7px; font-size:12px; font-weight:800; color:#20242a; background:rgba(255,255,255,.88); border-radius:6px; padding:1px 6px; }
+  .dm-grid .mini{ width:118px; height:166px; padding:11px 9px 10px; }
+  .dm-grid .mini .cc{ width:25px; height:25px; font-size:15px; top:7px; left:9px; }
+  .dm-grid .mini .cn{ font-size:13.5px; margin:2px 22px 0; }
+  .dm-grid .mini .sep{ margin:8px 2px; }
+  .dm-grid .mini .ce{ font-size:12px; line-height:1.5; padding-bottom:15px; }
+  .dm-grid .mini .own-chip{ font-size:9.5px; padding:2px 7px; right:7px; bottom:6px; }
+  .dm-grid .mini .cnt{ position:absolute; right:7px; top:6px; font-size:12px; font-weight:800; color:#12212c; background:rgba(255,255,255,.92); border-radius:6px; padding:1px 6px; }
   .dm-btns{ display:flex; justify-content:flex-end; margin-top:16px; }
   .dstitle{ font-size:12px; letter-spacing:.16em; color:#9fb2c4; margin:12px 0 8px; }
   .drawpile{ cursor:pointer; }
@@ -745,7 +779,7 @@
     assault: { name:'突击',     cost:2, cls:'c-mul', face:'6×1穿',text:'6 次 1 点穿刺伤害',     dmg:1, hits:6, pierce:true },
     pas_ranger: { name:'被动·猎手', cost:0, cls:'c-pas', face:'P', text:'每造成 2 次伤害，下一击转穿刺', passive:true },
     pas_trickster: { name:'被动·换脸', cost:0, cls:'c-pas', face:'P', text:'完整回合内双方受到伤害相等，则交换血量', passive:true },
-    pas_sword: { name:'被动·嗜血', cost:0, cls:'c-pas', face:'血', text:'血量低于一半时，造成伤害的 20% 转为回复', passive:true },
+    pas_sword: { name:'被动·嗜血', cost:0, cls:'c-pas', face:'血', text:'常驻 30% 吸血（半回合末结算）；生命 ≤10 点时立即获得增伤 +1', passive:true },
     pas_gambler: { name:'被动·千术', cost:0, cls:'c-pas', face:'骰', text:'掷骰时 1/2/3 概率降至 30%；两颗骰子相同的概率减半', passive:true },
     qianyun: { name:'千云', cost:2, cls:'c-sta', face:'🎲🎲', text:'掷 2 颗骰子，造成点数之和的穿刺伤害', dice:2, dmg:8, pierce:true },
     gambling: { name:'赌运', cost:1, cls:'c-skl', face:'🎲', text:'掷 1 颗骰子：恢复点数血量 + 造成（6-点数）伤害', dice:1, healDice:true, dmgReverse:true },
@@ -754,8 +788,8 @@
     stop: { name:'止损', cost:0, cls:'c-skl', face:'+2行', text:'恢复 2 点行动力', apGain:2 },
     allin2: { name:'ALL IN', cost:2, cls:'c-sta', face:'🎲🎲', text:'掷 2 颗骰子，给对方「两骰点数之差×2」点生命损失', dice:2, lifelossDiceDiff:true },
     swordintent: { name:'剑意', cost:0, cls:'c-skl', face:'+2♥', text:'回 2 血 · 回 1 行动力', heal:2, apGain:1 },
-    twinblade: { name:'双刀', cost:1, cls:'c-mul', face:'4×1穿', text:'4 次 1 点穿刺伤害', dmg:1, hits:4, pierce:true },
-    focused: { name:'无心极意', cost:1, cls:'c-mul', face:'增+1', text:'获得 1 层增伤（持续半回合）', buff:1 },
+    twinblade: { name:'双刀', cost:2, cls:'c-mul', face:'4×1', text:'4 次 1 点伤害', dmg:1, hits:4 },
+    focused: { name:'无心极意', cost:1, cls:'c-mul', face:'增+1·减1费', text:'本半回合 +1 层增伤；下一张牌费用 -1', buff:1 },
     sakura: { name:'斩樱', cost:1, cls:'c-skl', face:'+4♥', text:'回 4 血 · 抽 1 张', heal:4, draw:1 },
     guard: { name:'横剑', cost:1, cls:'c-skl', face:'+4盾', text:'获得 4 点护盾', block:4 },
     multi  : { name:'多次攻击', cost:1, cls:'c-mul', face:'4×1',  text:'4 次 1 点伤害',        dmg:1, hits:4 },
@@ -931,8 +965,8 @@
       } else { shake(who, 'blk'); showFloat(who, '格挡 '+absorbed, 'block'); }
     } else {
       p.hp = Math.max(0, p.hp - dmg);
-      shake(who, pierce ? 'fire' : '');
-      showFloat(who, '-'+dmg, pierce ? 'fire' : '');
+      shake(who, pierce ? 'tear' : '');
+      showFloat(who, '-'+dmg, pierce ? 'pierce' : '');
     }
     p.dmgTaken = (p.dmgTaken || 0) + (before - p.hp);   // 记录本回合受创
     var lost = before - p.hp;
@@ -954,6 +988,7 @@
   // 由 from 发起的一次伤害：叠加增伤 + 被动转穿刺
   function hitFrom(from, to, base, pierce, cb){
     var fp = G.players[from];
+    if (fp.passiveLifesteal && fp.hp <= 10 && !fp.rageOn){ fp.rageOn = true; fp.dmgBuff = (fp.dmgBuff || 0) + 1; showFloat(from, '嗜血增伤 +1', 'gain'); }   // 立即检测
     var dmg = base + (fp.dmgBuff || 0);
     if (fp.passiveRanger){
       if (fp.charge){ pierce = true; fp.charge = false; fp.hitCount = 0; }
@@ -962,8 +997,8 @@
     if (fp.weak > 0 && !pierce) dmg -= 1;    // 虚弱：非穿刺伤害每段 -1
     if (dmg < 0) dmg = 0;
     var lost = takeHit(to, dmg, pierce, cb, from);
-    if (fp.passiveLifesteal && fp.lifestealOn && !fp.dead && lost > 0){
-      heal(from, Math.max(1, Math.round(lost * 0.2)));   // 嗜血：20% 吸血
+    if (fp.passiveLifesteal && !fp.dead && lost > 0 && G.turn === from){
+      fp.healPool = (fp.healPool || 0) + lost;           // 嗜血：本半回合累计伤害，结束统一结算
     }
     return lost;
   }
@@ -985,24 +1020,28 @@
       }, multi ? (150 + i*230) : 120);
     })(i); }
   }
+  /* 费用计算：无心极意使「下一张牌」费用 -1 */
+  function effCost(p, d){ return Math.max(0, (d.cost || 0) - ((p && p.costCut) || 0)); }
   /* ================= 出牌 ================= */
   function playCard(who, idx){
     if (G.over || G.phase!=='play' || G.turn!==who) return;
     var p = G.players[who];
     var c = p.hand[idx]; if (!c) return;
     var d = DEFS[c.key];
-    if (d.cost > p.ap){ log('行动力不足，出不了「'+d.name+'」'); return; }
+    var pay = effCost(p, d);
+    if (pay > p.ap){ log('行动力不足，出不了「'+d.name+'」'); return; }
 
-    p.ap -= d.cost;
+    p.ap -= pay;
+    if (p.costCut) p.costCut = 0;      // 用掉「下一张牌 -1」
     p.hand.splice(idx,1);
-    if (who === 'opp') showPlayed(c.key);      // 对手出的牌亮在中央
+    if (who === 'opp') showPlayed(c.key, ownerNameOfCard(c));   // 对手出的牌亮在中央
     if (G.turnStat && G.turnStat.seat === who) G.turnStat.cards.push(d.name);
 
     if (d.passive){                       // 被动：不耗行动力，直接留场
       p.field.push(c);
       if (c.key === 'pas_ranger') p.passiveRanger = true;
       if (c.key === 'pas_trickster') p.passiveTrickster = true;
-      if (c.key === 'pas_sword') p.passiveLifesteal = true;   // 血量低于一半时 20% 吸血
+      if (c.key === 'pas_sword'){ p.passiveLifesteal = true; p.lifestealOn = true; }   // 常驻 30% 吸血（当回合即生效）
       if (c.key === 'pas_gambler') p.passiveGambler = true;   // 千术：降低掷出 1/2/3 的概率
       log(pname(who)+' 被动生效：'+d.name+'（不耗行动力）');
       updateUI(); return;
@@ -1083,12 +1122,13 @@
     }
     else if (c.key === 'twinblade'){
       log(pname(who)+' 双刀 → 4 次 1 点穿刺');
-      attackSeq(who, foe, [ {dmg:1,pierce:true},{dmg:1,pierce:true},{dmg:1,pierce:true},{dmg:1,pierce:true} ], false);
+      attackSeq(who, foe, [ {dmg:1},{dmg:1},{dmg:1},{dmg:1} ], false);
     }
     else if (c.key === 'focused'){
       p.dmgBuff = (p.dmgBuff || 0) + (d.buff || 1);
+      p.costCut = 1;
       showFloat(who, '增伤+'+(d.buff||1), 'gain');
-      log(pname(who)+' 无心极意 → 增伤 +'+(d.buff||1)+'（本半回合有效）');
+      log(pname(who)+' 无心极意 → 增伤 +'+(d.buff||1)+'、下一张牌费用 -1');
       updateUI();
     }
     else if (c.key === 'qianyun'){
@@ -1221,7 +1261,8 @@
     G.turn = who; G.phase = 'play'; G.endLock = false; G.swapMode = false;
     G.turnStat = { seat: who, dmg: 0, cards: [] };
     var p = G.players[who];
-    p.lifestealOn = !!(p.passiveLifesteal && p.hp < p.max/2);   // 嗜血：半回合开始时判定
+    p.lifestealOn = !!p.passiveLifesteal; p.healPool = 0; p.rageOn = false;   // 嗜血：常驻 30%，累计清零、增伤标记重置
+    if (p.passiveLifesteal && p.hp <= 10){ p.rageOn = true; p.dmgBuff = (p.dmgBuff || 0) + 1; showFloat(who, '嗜血增伤 +1', 'gain'); }
     var base = p.baseAp || 3;
     var ap = Math.max(0, base - (p.apPenalty || 0)); p.apPenalty = 0;
     p.ap = ap;
@@ -1239,6 +1280,14 @@
       drawCards(w, n);
     });
   }
+  function settleLifesteal(who){                  // 半回合结束：按本半回合总伤害结算吸血
+    var p = G.players[who];
+    if (p.passiveLifesteal && p.healPool > 0 && !p.dead){
+      var n = Math.round(p.healPool * 0.3);
+      if (n > 0){ heal(who, n); showFloat(who, '+'+n, 'gain'); log(pname(who)+' 嗜血：本半回合造成 '+p.healPool+' 点伤害 → 回复 '+n+' 血'); }
+    }
+    p.healPool = 0;
+  }
   function endHalfTurn(){                        // 玩家点「结束半回合」
     if (G.over || G.phase!=='play' || G.turn!=='me' || G.endLock) return;
     endTurnInternal('me');
@@ -1247,10 +1296,11 @@
     if (G.over || G.phase!=='play' || G.endLock) return;
     G.endLock = true;
     finalizeBurst();
+    settleLifesteal(who);          // 吸血优先结算（先于灼烧/生命损失等）
     resolveBurn(who, function(){
       if (G.over) return;
       var p = G.players[who];
-      p.dmgBuff = 0;               // 增伤：只持续本半回合
+      p.dmgBuff = 0; p.costCut = 0;   // 增伤只持续本半回合；减费也作废
       if (p.weak > 0) p.weak -= 1; // 虚弱：在本方半回合结束时递减
       if (p.hand.length > 4){
         G.phase = 'discard';
@@ -1482,19 +1532,19 @@
     // 困难：以 aiScore 的威胁评估为准；推演搜索(hardChoose)实测不如贪心，默认关闭
     if (diff === 'easy'){                              // 简单：只看表面、有时乱出、有时收手
       var playable = [];
-      for (var i=0;i<p.hand.length;i++){ if (DEFS[p.hand[i].key].cost <= p.ap) playable.push(i); }
+      for (var i=0;i<p.hand.length;i++){ if (effCost(p, DEFS[p.hand[i].key]) <= p.ap) playable.push(i); }
       if (!playable.length) return -1;
       if (Math.random() < 0.30) return -1;
       if (Math.random() < 0.45) return playable[Math.floor(Math.random()*playable.length)];
       var eb=-1, ebs=0;
-      for (var j=0;j<p.hand.length;j++){ var cc=p.hand[j], dd=DEFS[cc.key]; if (dd.cost>p.ap) continue; var s2=aiScore(cc,p,f); if (s2>ebs){ebs=s2;eb=j;} }
+      for (var j=0;j<p.hand.length;j++){ var cc=p.hand[j], dd=DEFS[cc.key]; if (effCost(p,dd)>p.ap) continue; var s2=aiScore(cc,p,f); if (s2>ebs){ebs=s2;eb=j;} }
       return eb<0 ? playable[0] : eb;
     }
     var canLethal = dmgPotential(p, f) >= f.hp;         // 本回合伤害够了 → 全力输出
     var best = -1, bestScore = 0;
     for (var k=0;k<p.hand.length;k++){
       var c = p.hand[k], d = DEFS[c.key];
-      if (d.cost > p.ap) continue;
+      if (effCost(p, d) > p.ap) continue;
       var s;
       if (canLethal && !d.passive){
         if (!(d.dmg || d.buff)) continue;               // 斩杀模式：只出能推进伤害的牌
@@ -1563,19 +1613,37 @@
   function pname(who){ return who === 'me' ? '你' : '对手'; }
   function enemyOf(who){ return who === 'me' ? 'opp' : 'me'; }
   function log(t){ document.getElementById('logline').textContent = t; }
-  function showPlayed(key){
+  function ownerNameOfCard(card, seatCharId){
+    try{
+      if (seatCharId) return getChar(seatCharId).name;
+      if (card && card.ownerIdx != null && typeof TM !== 'undefined' && TM && TM.comb[card.ownerIdx]) return getChar(TM.comb[card.ownerIdx].charId).name;
+      if (card && card.owner) return getChar(card.owner === 'me' ? chosenMe : chosenOpp).name;
+    }catch(e){}
+    return '';
+  }
+  function miniHTML(key, o){
+    o = o || {};
+    var d = DEFS[key];
+    var cost = (o.cost != null) ? o.cost : d.cost;
+    return '<div class="mini '+d.cls+' '+(o.extra||'')+'"'+(o.data||'')+'>'
+      + '<span class="cc'+(o.cut?' cut':'')+'">'+cost+'</span>'
+      + '<div class="cn">'+d.name+'</div>'
+      + '<div class="sep"></div>'
+      + '<div class="ce">'+d.text+'</div>'
+      + (o.owner ? '<span class="own-chip">'+o.owner+'</span>' : '')
+      + (o.cnt ? '<span class="cnt">×'+o.cnt+'</span>' : '')
+      + '</div>';
+  }
+  function showPlayed(key, ownerName){
     var d = DEFS[key]; if (!d) return;
     var box = document.getElementById('playedBox');
-    box.innerHTML = '<div class="mini '+d.cls+'"><span class="cc">'+d.cost+'</span><div class="cn">'+d.name+'</div>'+
-                    '<div class="ca">'+d.face+'</div><div class="ce">'+d.text+'</div></div>';
+    box.innerHTML = miniHTML(key, {owner: ownerName});
     clearTimeout(box._t);
     box._t = setTimeout(function(){ box.innerHTML = ''; }, 1400);
   }
 
   function cardHTML(c){
-    var d = DEFS[c.key];
-    return '<div class="mini '+d.cls+'"><span class="cc">'+d.cost+'</span><div class="cn">'+d.name+'</div>'+
-           '<div class="ca">'+d.face+'</div><div class="ce">'+d.text+'</div></div>';
+    return miniHTML(c.key, {owner: ownerNameOfCard(c)});
   }
 
   // 手牌单行自适应叠压：牌越多叠越紧，绝不折行
@@ -1594,11 +1662,11 @@
     myBox.className = 'hand ' + (G.turn === 'me' && G.phase !== 'over' && !G.players.me.dead ? 'handactive' : 'handidle');
     myBox.innerHTML = G.players.me.hand.map(function(c,i){
       var d = DEFS[c.key];
-      var can = (G.turn==='me' && G.phase==='play' && G.players.me.ap >= d.cost);
+      var mcost = effCost(G.players.me, d);
+      var can = (G.turn==='me' && G.phase==='play' && G.players.me.ap >= mcost);
       if (G.swapMode) can = true;
       var cls = (G.phase==='discard' && G.turn==='me') ? '' : (can ? 'playable' : (G.turn==='me' && G.phase==='play' ? 'unplayable' : ''));
-      return '<div class="mini '+d.cls+' '+cls+'" data-side="me" data-idx="'+i+'"><span class="cc">'+d.cost+'</span>'+
-             '<div class="cn">'+d.name+'</div><div class="ca">'+d.face+'</div><div class="ce">'+d.text+'</div></div>';
+      return miniHTML(c.key, {cost:mcost, cut:!!G.players.me.costCut, extra:cls, data:' data-side="me" data-idx="'+i+'"', owner: ownerNameOfCard(c)});
     }).join('');
     fitHand(myBox, G.players.me.hand.length);
 
@@ -1904,10 +1972,10 @@
     box.className = 'hand ' + (active ? 'handactive' : 'handidle') + (disc ? ' discarding' : '');
     box.innerHTML = my.hand.map(function(c,i){
       var d = DEFS[c.key];
-      var can = disc ? true : (active && d.cost<=my.ap);
+      var mcost = effCost(my, d);
+      var can = disc ? true : (active && mcost<=my.ap);
       var cls = (!disc && active && !can) ? 'unplayable' : '';
-      return '<div class="mini '+d.cls+' '+cls+'" data-i="'+i+'"><span class="cc">'+d.cost+'</span><div class="cn">'+d.name+'</div>'
-        + '<div class="ca">'+d.face+'</div><div class="ce">'+d.text+'</div></div>';
+      return miniHTML(c.key, {cost:mcost, cut:!!my.costCut, extra:cls, data:' data-i="'+i+'"', owner: ownerNameOfCard(c)});
     }).join('');
     fitHand(box, my.hand.length);
   }
@@ -1920,6 +1988,7 @@
   function tmHit(fi, ti, base, pierce){
     var from = TM.comb[fi], to = TM.comb[ti];
     if (TM.over || to.dead) return 0;
+    if (from.passiveLifesteal && from.hp <= 10 && !from.rageOn){ from.rageOn = true; from.dmgBuff = (from.dmgBuff||0) + 1; tmFloat(from,'嗜血增伤 +1','gain'); }   // 立即检测
     var dmg = base + (from.dmgBuff||0);
     if (from.passiveRanger){ if (from.charge){ pierce=true; from.charge=false; from.hitCount=0; } else { from.hitCount++; if (from.hitCount>=2){ from.charge=true; from.hitCount=0; } } }
     if (from.weak>0 && !pierce) dmg -= 1;
@@ -1928,9 +1997,9 @@
     if (!pierce && to.shield>0){ blocked=Math.min(to.shield,dmg); to.shield-=blocked; dmg-=blocked; }
     var before=to.hp; to.hp=Math.max(0,to.hp-dmg); var lost=before-to.hp; to.dmgTaken+=lost;
     if (blocked>0){ tmShieldFx(to,'absorb'); tmFloat(to,'格挡 '+blocked,'block'); }
-    if (lost>0){ tmFloat(to, '-'+lost, pierce?'fire':''); }
-    if (blocked>0 || lost>0) tmShake(to, pierce?'fire':(blocked>0&&lost===0?'blk':''));
-    if (from.passiveLifesteal && from.lifestealOn && lost>0) tmHeal(from, Math.max(1, Math.round(lost*0.2)));
+    if (lost>0){ tmFloat(to, '-'+lost, pierce?'pierce':''); }
+    if (blocked>0 || lost>0) tmShake(to, pierce?'tear':(blocked>0&&lost===0?'blk':''));
+    if (from.passiveLifesteal && lost>0 && TM.comb[TM.order[TM.ti]]===from) from.healPool = (from.healPool||0) + lost;   // 嗜血：本半回合累计
     if (to.hp<=0){ to.dead=true; tmFall(to); }
     tmCheckWin(); tmRender();
     return lost;
@@ -1977,12 +2046,14 @@
   function tmPlayCard(si, idx, targetIdx, cb){
     var me = TM.comb[si]; if (!me || TM.over || me.dead) return;
     var c = me.hand[idx]; if (!c) return;
-    var d = DEFS[c.key]; if (d.cost > me.ap) return;
-    me.ap -= d.cost; me.hand.splice(idx,1); TM.targeting = -1; tmHighlightTargets(false); tmHint('');
+    var d = DEFS[c.key];
+    var pay = effCost(me, d); if (pay > me.ap) return;
+    me.ap -= pay; if (me.costCut) me.costCut = 0;   // 用掉「下一张牌 -1」
+    me.hand.splice(idx,1); TM.targeting = -1; tmHighlightTargets(false); tmHint('');
     if (d.passive){ me.field.push(c);
       if (c.key==='pas_ranger') me.passiveRanger=true;
       if (c.key==='pas_trickster') me.passiveTrickster=true;
-      if (c.key==='pas_sword') me.passiveLifesteal=true;
+      if (c.key==='pas_sword'){ me.passiveLifesteal=true; me.lifestealOn=true; }
       if (c.key==='pas_gambler') me.passiveGambler=true;
       log(me.name+' 被动生效：'+d.name); tmRender(); if (cb) cb(); return; }
     tmOwnerPush(c, si);
@@ -1994,12 +2065,13 @@
     switch (c.key){
       case 'strike': case 'strike3': case 'strike2': { var dm=d.dmg||4; anim=true; tmAttackSeq(si,ti,[{dmg:dm}],function(){ if (d.draw) tmDraw(me,d.draw); tmRender(); if (cb) cb(); }); break; }
       case 'multi': anim=true; tmAttackSeq(si,ti,[{dmg:1},{dmg:1},{dmg:1},{dmg:1}],function(){ tmRender(); if (cb) cb(); }); break;
-      case 'twinblade': anim=true; tmAttackSeq(si,ti,[{dmg:1,pierce:true},{dmg:1,pierce:true},{dmg:1,pierce:true},{dmg:1,pierce:true}],function(){ tmRender(); if (cb) cb(); }); break;
+      case 'twinblade': anim=true; tmAttackSeq(si,ti,[{dmg:1},{dmg:1},{dmg:1},{dmg:1}],function(){ tmRender(); if (cb) cb(); }); break;
       case 'dagger': anim=true; tmAttackSeq(si,ti,[{dmg:3,pierce:true}],function(){ tmHeal(me,1); tmRender(); if (cb) cb(); }); break;
       case 'assault': { var hs=[]; for (var q=0;q<6;q++) hs.push({dmg:1,pierce:true}); anim=true; tmAttackSeq(si,ti,hs,function(){ tmRender(); if (cb) cb(); }); break; }
       case 'qianyun': case 'highstake': { var f=tmRoll(me, d.dice||1), sm=0; for (var z=0;z<f.length;z++) sm+=f[z]; anim=true; tmAttackSeq(si,ti,[{dmg:sm, pierce:!!d.pierce}],function(){ tmRender(); if (cb) cb(); }); break; }
       case 'gambling': { var g=tmRoll(me,1), gv=g[0]; tmHeal(me,gv); var gd=6-gv; if (gd>0 && foe){ anim=true; tmAttackSeq(si,ti,[{dmg:gd}],function(){ tmRender(); if (cb) cb(); }); } break; }
-      case 'longbow': case 'focused': me.dmgBuff += (d.buff||1); tmFloat(me,'增伤+'+(d.buff||1),'gain'); break;
+      case 'longbow': me.dmgBuff += (d.buff||1); tmFloat(me,'增伤+'+(d.buff||1),'gain'); break;
+      case 'focused': me.dmgBuff += (d.buff||1); me.costCut = 1; tmFloat(me,'增伤+'+(d.buff||1)+'·下张-1','gain'); break;
       case 'rest': case 'charm': tmHeal(me,3); me.ap+=1; break;
       case 'swordintent': tmHeal(me,2); me.ap+=1; break;
       case 'sakura': tmHeal(me,4); tmDraw(me,1); break;
@@ -2022,7 +2094,7 @@
     var best=null;
     function pick(o, s){ if (!best || s > best.score) best = { idx:o.idx, target:o.target, score:s }; }
     for (var k=0;k<me.hand.length;k++){
-      var c=me.hand[k], d=DEFS[c.key]; if (d.cost > me.ap) continue;
+      var c=me.hand[k], d=DEFS[c.key]; if (effCost(me, d) > me.ap) continue;
       if (d.passive){ pick({idx:k,target:-1}, 72); continue; }
       var needs = !!(d.dmg || d.lifeloss || d.weak || d.swap || d.disrupt || d.lifelossDiceDiff || d.dmgReverse || d.debuff==='burn');
       if (!needs || !en.length){ pick({idx:k,target:-1}, aiScore(c, me, en.length?TM.comb[en[0]]:me)); continue; }
@@ -2107,7 +2179,7 @@
     if (justRaged) boss.rageOn = true;
     log('巨人 施放 ' + sk.name + (rage && sk.dmg ? '（狂暴 +3）' : ''));
     if (justRaged){ tmFloat(boss,'狂暴！','fire'); setTimeout(function(){ log('巨人进入狂暴状态——所有技能伤害 +3！'); }, 30); }
-    if (DEFS[sk.key]) showPlayed(sk.key);
+    if (DEFS[sk.key]) showPlayed(sk.key, '巨人');
     tmRender();
     if (!players.length){ finish(); return; }
     if (sk.kind === 'self'){
@@ -2158,17 +2230,27 @@
     var rd = (i === TM.order[0]);
     if (rd) tmDrawAll();
     c.ap = Math.max(0, (c.baseAp||3) - (c.apPenalty||0)); c.apPenalty = 0;
-    c.lifestealOn = !!(c.passiveLifesteal && c.hp < c.max/2);
+    c.lifestealOn = !!c.passiveLifesteal; c.healPool = 0; c.rageOn = false;   // 嗜血：常驻 30%，累计清零、增伤标记重置
+    if (c.passiveLifesteal && c.hp <= 10){ c.rageOn = true; c.dmgBuff = (c.dmgBuff||0) + 1; tmFloat(c,'嗜血增伤 +1','gain'); }
     log('第 '+TM.round+' 回合'+(rd?'开始 · 全员抽牌':'')+' · ' + c.name + '（' + getChar(c.charId).name + '）的半回合');
     tmHint(i===0 ? '你的半回合：点手牌出牌' : '');
     tmRender();
     if (i !== 0) setTimeout(tmAiTurn, 700);
   }
+  function tmSettleLifesteal(i){
+    var c = TM.comb[i]; if (!c) return;
+    if (c.passiveLifesteal && c.healPool > 0 && !c.dead){
+      var n = Math.round(c.healPool * 0.3);
+      if (n > 0){ tmHeal(c, n); tmFloat(c, '+'+n, 'gain'); log(c.name+' 嗜血：本半回合造成 '+c.healPool+' 点伤害 → 回复 '+n+' 血'); }
+    }
+    c.healPool = 0;
+  }
   function tmEndTurn(i){
     if (!TM || TM.over) return;
     var c = TM.comb[i];
+    tmSettleLifesteal(i);        // 吸血优先结算
     if (c.burn>0 && !c.dead){ var v=Math.max(1,Math.round(c.hp*0.10)), b=c.hp; c.hp=Math.max(0,c.hp-v); c.dmgTaken+=(b-c.hp); tmFloat(c,'灼烧 -'+(b-c.hp),'fire'); if (c.hp<=0){ c.dead=true; tmFall(c); } c.burn--; }
-    c.dmgBuff = 0; if (c.weak>0) c.weak--;
+    c.dmgBuff = 0; c.costCut = 0; if (c.weak>0) c.weak--;
     tmCheckWin(); tmRender();
     if (TM.over) return;
     if (c.hand.length > 4){
@@ -2260,9 +2342,7 @@
     ch.deck.forEach(function(k){ if (!counts[k]) order.push(k); counts[k] = (counts[k]||0) + 1; });
     document.getElementById('dmTitle').textContent = ch.name + ' · 卡组（共 12 张）';
     document.getElementById('dmGrid').innerHTML = order.map(function(k){
-      var d = DEFS[k];
-      return '<div class="mini '+d.cls+'"><span class="cc">'+d.cost+'</span><div class="cn">'+d.name+'</div>'+
-             '<div class="ca">'+d.face+'</div><div class="ce">'+d.text+'</div><span class="cnt">×'+counts[k]+'</span></div>';
+      return miniHTML(k, {cnt: counts[k], owner: ch.name});
     }).join('');
     document.getElementById('deckModal').classList.add('on');
   }
@@ -2271,29 +2351,28 @@
 
   function groupCards(arr){
     var c = {}, o = [];
-    arr.forEach(function(x){ var k=x.key; if (!(k in c)){ c[k]=0; o.push(k); } c[k]++; });
-    return o.map(function(k){ return { k:k, n:c[k] }; });
+    arr.forEach(function(x){ var on = ownerNameOfCard(x); var k = x.key + '|' + on;
+      if (!(k in c)){ c[k] = { n:0, key:x.key, own:on }; o.push(k); } c[k].n++; });
+    return o.map(function(k){ return c[k]; });
   }
-  function miniCard(k, n){
-    var d = DEFS[k];
-    return '<div class="mini '+d.cls+'"><span class="cc">'+d.cost+'</span><div class="cn">'+d.name+'</div>'+
-           '<div class="ca">'+d.face+'</div><div class="ce">'+d.text+'</div><span class="cnt">×'+n+'</span></div>';
+  function miniCard(it){
+    return miniHTML(it.key, {cnt: it.n, owner: it.own});
   }
   function renderPile(){
     var me = G.players.me, op = G.players.opp;
     var h = '';
     var deck = groupCards(me.deck), hand = groupCards(me.hand);
-    h += '<div class="dstitle">你的牌堆（未抽 '+me.deck.length+' 张）</div><div class="dm-grid">'+ (deck.length? deck.map(function(it){ return miniCard(it.k,it.n); }).join('') : '<span style="color:#8ea2b4">（空）</span>') +'</div>';
-    h += '<div class="dstitle">你的手牌（'+me.hand.length+' 张）</div><div class="dm-grid">'+ (hand.length? hand.map(function(it){ return miniCard(it.k,it.n); }).join('') : '<span style="color:#8ea2b4">（空）</span>') +'</div>';
-    if (me.field.length) h += '<div class="dstitle">场上（被动）</div><div class="dm-grid">'+ me.field.map(function(c){ var d=DEFS[c.key]; return '<div class="mini '+d.cls+'"><span class="cc">'+d.cost+'</span><div class="cn">'+d.name+'</div><div class="ca">'+d.face+'</div><div class="ce">'+d.text+'</div></div>'; }).join('') +'</div>';
+    h += '<div class="dstitle">你的牌堆（未抽 '+me.deck.length+' 张）</div><div class="dm-grid">'+ (deck.length? deck.map(miniCard).join('') : '<span style="color:#8ea2b4">（空）</span>') +'</div>';
+    h += '<div class="dstitle">你的手牌（'+me.hand.length+' 张）</div><div class="dm-grid">'+ (hand.length? hand.map(miniCard).join('') : '<span style="color:#8ea2b4">（空）</span>') +'</div>';
+    if (me.field.length) h += '<div class="dstitle">场上（被动）</div><div class="dm-grid">'+ me.field.map(function(c){ var d=DEFS[c.key]; return miniHTML(c.key, {owner: ownerNameOfCard(c)}); }).join('') +'</div>';
     h += '<div class="dstitle">对手：手牌 '+op.hand.length+' 张 · 牌堆 '+op.deck.length+' 张</div>';
     document.getElementById('pmBody').innerHTML = h;
   }
   function renderPileTeam(){
     if (!TM) return;
     var me = TM.comb[0], h = '';
-    h += '<div class="dstitle">你 · 牌堆（未抽 '+me.deck.length+' 张）</div><div class="dm-grid">'+(groupCards(me.deck).map(function(it){return miniCard(it.k,it.n);}).join('')||'<span style="color:#8ea2b4">（空）</span>')+'</div>';
-    h += '<div class="dstitle">你 · 手牌（'+me.hand.length+' 张）</div><div class="dm-grid">'+(groupCards(me.hand).map(function(it){return miniCard(it.k,it.n);}).join('')||'<span style="color:#8ea2b4">（空）</span>')+'</div>';
+    h += '<div class="dstitle">你 · 牌堆（未抽 '+me.deck.length+' 张）</div><div class="dm-grid">'+(groupCards(me.deck).map(miniCard).join('')||'<span style="color:#8ea2b4">（空）</span>')+'</div>';
+    h += '<div class="dstitle">你 · 手牌（'+me.hand.length+' 张）</div><div class="dm-grid">'+(groupCards(me.hand).map(miniCard).join('')||'<span style="color:#8ea2b4">（空）</span>')+'</div>';
     h += '<div class="dstitle">其余参战者</div>';
     for (var i=1;i<TM.n;i++){ var c=TM.comb[i]; h += '<div class="statrow"><span>'+c.name+' · '+tmCharOf(c).name+'</span><span>手牌 '+c.hand.length+' · 牌堆 '+c.deck.length+' · '+(c.dead?'已倒下':c.hp+'/'+c.max)+'</span></div>'; }
     document.getElementById('pmBody').innerHTML = h;
