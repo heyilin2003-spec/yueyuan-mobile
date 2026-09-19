@@ -177,6 +177,8 @@
   .handactive .mini{ cursor:pointer; }
   .handactive .mini:hover{ transform:translateY(-11px); z-index:6; box-shadow:0 18px 30px rgba(0,0,0,.55), inset 0 0 0 3px rgba(255,255,255,.75); }
   .handidle .mini{ filter:brightness(.88) saturate(.85); }
+  .hand.discarding .mini{ box-shadow:0 0 0 2px rgba(255,205,110,.85), 0 8px 16px rgba(0,0,0,.45), inset 0 0 0 2px rgba(255,255,255,.6) !important; }
+  .hand.discarding .mini:hover{ transform:translateY(-10px); }
 
   .playable{ box-shadow:0 0 0 2px rgba(120,240,170,.75), 0 8px 16px rgba(0,0,0,.4), inset 0 0 0 2px rgba(255,255,255,.6) !important; }
   .unplayable{ filter:brightness(.62) saturate(.6) !important; }
@@ -1667,6 +1669,7 @@
   document.getElementById('myHand').addEventListener('click', function(e){
     if (TM && !TM.over){
       var el = e.target.closest('.mini'); if (!el) return;
+      if (TM.phase === 'discard'){ tmDiscard(TM.discSi, parseInt(el.dataset.i, 10)); return; }
       if (TM.targeting >= 0){ TM.targeting = -1; tmHighlightTargets(false); tmHint(''); tmRender(); return; }
       tmCardClick(parseInt(el.dataset.i, 10));
       return;
@@ -1675,7 +1678,7 @@
   });
   document.getElementById('foeHand').addEventListener('click', onCardClick);
 
-  document.getElementById('endBtn').addEventListener('click', function(){ if (TM) { if (!TM.over && TM.order[TM.ti]===0) tmEndTurn(0); } else endHalfTurn(); });
+  document.getElementById('endBtn').addEventListener('click', function(){ if (TM) { if (!TM.over && TM.phase!=='discard' && TM.order[TM.ti]===0) tmEndTurn(0); } else endHalfTurn(); });
   document.getElementById('againBtn').addEventListener('click', function(){ document.getElementById('banner').classList.remove('on'); if (TM) { if (TM.bossMode) tmStartBoss(); else tmStart(); } else reset(); });
   document.getElementById('statsBtn').addEventListener('click', function(){ renderStats(); document.getElementById('stats').classList.add('on'); });
   document.getElementById('statsClose').addEventListener('click', function(){ document.getElementById('stats').classList.remove('on'); });
@@ -1803,7 +1806,7 @@
                    tmNewComb(rnd(), 0, false, '盟友', 1),
                    tmNewComb(rnd(), 1, false, '敌1', 2),
                    tmNewComb(rnd(), 1, false, '敌2', 3) ],
-           n: 4, bossMode: false, order: [0,2,1,3], ti: 0, round: 1, over: false, winner: null, targeting: -1 };
+           n: 4, bossMode: false, order: [0,2,1,3], ti: 0, round: 1, over: false, winner: null, targeting: -1, phase: 'play' };
     G = { difficulty: chosenDiff, players:{me:null,opp:null}, log:{me:{dmg:0,cards:[]},opp:{dmg:0,cards:[]}} };
     document.getElementById('select').classList.remove('on');
     table.classList.add('team');
@@ -1824,7 +1827,7 @@
     TM = { comb: [ tmNewComb(chosenMe, 0, true, '你', 0),
                    tmNewComb(allyKey, 0, false, '盟友', 1),
                    tmNewBoss(2) ],
-           n: 3, bossMode: true, order: [0,1,2], ti: 0, round: 1, over: false, winner: null, targeting: -1 };
+           n: 3, bossMode: true, order: [0,1,2], ti: 0, round: 1, over: false, winner: null, targeting: -1, phase: 'play' };
     G = { difficulty: chosenDiff, players:{me:null,opp:null}, log:{me:{dmg:0,cards:[]},opp:{dmg:0,cards:[]}} };
     document.getElementById('select').classList.remove('on');
     table.classList.add('team','bossmode');
@@ -1879,17 +1882,18 @@
     var dp = '';
     for (var q=0;q<TM.n;q++){ var cc=TM.comb[q]; if (cc.isBoss) continue; dp += (dp? ' · ':'') + cc.name+' '+cc.deck.length; }
     document.getElementById('drawpile').textContent = '牌堆：' + dp;
-    var eb = document.getElementById('endBtn'); if (eb) eb.disabled = TM.over || TM.order[TM.ti]!==0 || TM.targeting>=0;
+    var eb = document.getElementById('endBtn'); if (eb) eb.disabled = TM.over || TM.phase==='discard' || TM.order[TM.ti]!==0 || TM.targeting>=0;
   }
   function tmRenderHand(){
     var box = document.getElementById('myHand'); if (!box) return;
     var my = TM.comb[0];
-    var active = !TM.over && TM.order[TM.ti]===0 && TM.targeting<0;
-    box.className = 'hand ' + (active ? 'handactive' : 'handidle');
+    var disc = !TM.over && TM.phase === 'discard' && TM.discSi === 0;
+    var active = !TM.over && (disc || (TM.order[TM.ti]===0 && TM.targeting<0));
+    box.className = 'hand ' + (active ? 'handactive' : 'handidle') + (disc ? ' discarding' : '');
     box.innerHTML = my.hand.map(function(c,i){
       var d = DEFS[c.key];
-      var can = active && d.cost<=my.ap;
-      var cls = (active && !can) ? 'unplayable' : '';
+      var can = disc ? true : (active && d.cost<=my.ap);
+      var cls = (!disc && active && !can) ? 'unplayable' : '';
       return '<div class="mini '+d.cls+' '+cls+'" data-i="'+i+'"><span class="cc">'+d.cost+'</span><div class="cn">'+d.name+'</div>'
         + '<div class="ca">'+d.face+'</div><div class="ce">'+d.text+'</div></div>';
     }).join('');
@@ -2146,12 +2150,36 @@
     var c = TM.comb[i];
     if (c.burn>0 && !c.dead){ var v=Math.max(1,Math.round(c.hp*0.10)), b=c.hp; c.hp=Math.max(0,c.hp-v); c.dmgTaken+=(b-c.hp); tmFloat(c,'灼烧 -'+(b-c.hp),'fire'); if (c.hp<=0){ c.dead=true; tmFall(c); } c.burn--; }
     c.dmgBuff = 0; if (c.weak>0) c.weak--;
-    while (c.hand.length > 4){ var wi=0,ws=Infinity; for (var k=0;k<c.hand.length;k++){ var s=aiScore(c.hand[k],c,c); if (s<ws){ws=s;wi=k;} } tmOwnerPush(c.hand.splice(wi,1)[0], i); }
     tmCheckWin(); tmRender();
     if (TM.over) return;
+    if (c.hand.length > 4){
+      if (i === 0){                                   // 玩家手动弃牌
+        TM.phase = 'discard'; TM.discSi = 0;
+        tmHint('手牌超过上限 4，点击手牌弃牌（弃到 4 张）');
+        log('你的手牌 '+c.hand.length+' 张，超过上限 4，请点击弃牌');
+        tmRender();
+        return;
+      }
+      while (c.hand.length > 4){ var wi=0,ws=Infinity; for (var k=0;k<c.hand.length;k++){ var s=aiScore(c.hand[k],c,c); if (s<ws){ws=s;wi=k;} } tmOwnerPush(c.hand.splice(wi,1)[0], i); }
+      tmRender();
+    }
+    tmAdvance(i);
+  }
+  function tmAdvance(i){
+    if (!TM || TM.over) return;
+    TM.phase = 'play'; tmHint('');
     TM.ti = (TM.ti + 1) % TM.order.length;
     if (TM.ti === 0) tmRoundEnd();
     if (!TM.over) tmStartTurn(TM.order[TM.ti]);
+  }
+  function tmDiscard(si, idx){
+    if (!TM || TM.over || TM.phase !== 'discard' || si !== TM.discSi) return;
+    var c = TM.comb[si]; if (!c) return;
+    var card = c.hand.splice(idx,1)[0]; if (!card) return;
+    tmOwnerPush(card, si);
+    log('你弃掉一张牌');
+    if (c.hand.length <= 4){ TM.phase = 'play'; tmHint(''); tmAdvance(si); }
+    else { tmRender(); }
   }
   function tmRoundEnd(){
     TM.round++;
