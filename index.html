@@ -336,6 +336,9 @@
   .avatar.tm-target .figure{ animation:tmTarget .9s ease-in-out infinite; }
   @keyframes tmTarget{ 0%,100%{ filter:drop-shadow(0 0 4px rgba(255,90,90,.85)); } 50%{ filter:drop-shadow(0 0 15px rgba(255,90,90,1)); } }
   .tm-hint{ position:absolute; left:50%; top:20px; transform:translateX(-50%); font-size:13px; letter-spacing:.12em; color:#ffd9a0; z-index:6; }
+  .namerow{ display:flex; align-items:center; justify-content:space-between; gap:6px; }
+  .handcnt{ font-size:10px; font-weight:700; color:#c6dcf2; background:rgba(140,180,220,.16); box-shadow:inset 0 0 0 1px rgba(150,190,230,.35); border-radius:999px; padding:2px 7px; white-space:nowrap; }
+  .handcnt b{ color:#fff; }
 
   /* ---- BOSS 战 2v1 ---- */
   .table.bossmode #tms2{ right:30px; top:50%; transform:translateY(-50%); }
@@ -1843,7 +1846,7 @@
       el.className = 'tm-slot' + (c.isBoss ? ' isboss' : '');
       el.innerHTML = '<div class="avatar tm-av"><div class="shieldring"></div><div class="figure"><div class="rig">'+bodyHTML(ch.body)+'</div></div>'
         + '<div class="flash"></div><div class="shieldfx"></div><div class="dmg"></div></div>'
-        + '<div class="status"><div class="pname"></div><div class="hpbar"><i></i><span></span></div>'
+        + '<div class="status"><div class="namerow"><div class="pname"></div><span class="handcnt">手牌 <b>0</b></span></div><div class="hpbar"><i></i><span></span></div>'
         + '<div class="chips"><span class="chip ap">行动力 <b>0</b></span><span class="chip sh">护盾 <b>0</b></span></div><div class="debuffs"></div>'
         + (c.isBoss ? '<div class="bossnote">被动 · 狂暴：血量低于一半后，所有技能伤害 +3</div>' : '') + '</div>';
       var av = el.querySelector('.avatar');
@@ -1851,6 +1854,7 @@
       if (ch.body==='swordsman'||ch.body==='gambler'||ch.body==='giant'||ch.body==='ranger'||ch.body==='trickster') av.classList.add('imgchar');
       av.style.setProperty('--sy', ch.body === 'ranger' ? '12px' : '0px');
       el.querySelector('.pname').textContent = c.isBoss ? ('BOSS · ' + ch.name) : (c.name + ' · ' + ch.name);
+      if (c.isBoss) el.querySelector('.handcnt').style.display = 'none';
       c.el = el; c.av = av;
       av.addEventListener('click', function(){ tmAvatarClick(i); });
     })(i); }
@@ -1863,6 +1867,7 @@
       el.querySelector('.hpbar span').textContent = c.hp + ' / ' + c.max + (c.dead?' 已倒下':'');
       el.querySelector('.chip.ap b').textContent = c.ap;
       el.querySelector('.chip.sh b').textContent = c.shield;
+      var hcb = el.querySelector('.handcnt b'); if (hcb) hcb.textContent = c.hand.length;
       c.av.classList.toggle('has', c.shield>0);
       var db = el.querySelector('.debuffs'); db.innerHTML='';
       if (c.burn>0) db.insertAdjacentHTML('beforeend','<span class="debuff">灼烧 '+c.burn+'</span>');
