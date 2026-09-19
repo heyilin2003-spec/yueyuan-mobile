@@ -741,7 +741,7 @@
     pas_ranger: { name:'被动·猎手', cost:0, cls:'c-pas', face:'P', text:'每造成 2 次伤害，下一击转穿刺', passive:true },
     pas_trickster: { name:'被动·换脸', cost:0, cls:'c-pas', face:'P', text:'完整回合内双方受到伤害相等，则交换血量', passive:true },
     pas_sword: { name:'被动·嗜血', cost:0, cls:'c-pas', face:'血', text:'血量低于一半时，造成伤害的 20% 转为回复', passive:true },
-    pas_gambler: { name:'被动·千术', cost:0, cls:'c-pas', face:'骰', text:'掷骰子时，出现 1/2/3 的概率降至 30%', passive:true },
+    pas_gambler: { name:'被动·千术', cost:0, cls:'c-pas', face:'骰', text:'掷骰时 1/2/3 概率降至 30%；两颗骰子相同的概率减半', passive:true },
     qianyun: { name:'千云', cost:2, cls:'c-sta', face:'🎲🎲', text:'掷 2 颗骰子，造成点数之和的穿刺伤害', dice:2, dmg:8, pierce:true },
     gambling: { name:'赌运', cost:1, cls:'c-skl', face:'🎲', text:'掷 1 颗骰子：恢复点数血量 + 造成（6-点数）伤害', dice:1, healDice:true, dmgReverse:true },
     highstake: { name:'豪赌', cost:1, cls:'c-sta', face:'🎲', text:'掷 1 颗骰子，造成点数伤害', dice:1, dmg:4 },
@@ -1407,6 +1407,15 @@
     }
     return 1 + Math.floor(Math.random()*6);
   }
+  // 赌徒·千术：两颗骰子点数相同的概率减半（相同时，五成概率重掷其一）
+  function luckDice(faces){
+    if (!faces || faces.length < 2) return faces;
+    if (faces[0] === faces[1] && Math.random() < 0.5){
+      var v; do { v = 1 + Math.floor(Math.random()*6); } while (v === faces[0]);
+      faces[1] = v;
+    }
+    return faces;
+  }
   function rollDice(who){
     var face = rollDie(G.players[who]);
     showFloat(who, '🎲 '+face, 'gain');
@@ -1443,7 +1452,9 @@
   function showDice(face){ showDiceMulti([face]); }
   function rollDiceFaces(who, n){
     var p = G.players[who], faces = [], sum = 0;
-    for (var i=0;i<n;i++){ var f = rollDie(p); faces.push(f); sum += f; }
+    for (var i=0;i<n;i++){ faces.push(rollDie(p)); }
+    if (p.passiveGambler) luckDice(faces);
+    for (var j=0;j<n;j++){ sum += faces[j]; }
     G.dice = sum; showDiceMulti(faces);
     log(pname(who)+' 掷 '+n+' 颗骰子：'+faces.join(' + ')+' = '+sum);
     return faces;
@@ -1782,7 +1793,7 @@
   function tmOwnerPush(card, fallbackIdx){ var oi = (card && card.ownerIdx!=null) ? card.ownerIdx : fallbackIdx; (TM.comb[oi]||TM.comb[fallbackIdx]).deck.push(card); }
   function tmAliveEnemies(si){ var me=TM.comb[si], out=[]; for (var i=0;i<TM.n;i++){ if (TM.comb[i].team!==me.team && !TM.comb[i].dead) out.push(i); } return out; }
   function tmHint(t){ var el=document.getElementById('tmHint'); if (el) el.textContent = t||''; }
-  function tmRoll(c, n){ var f=[]; for (var i=0;i<n;i++) f.push(rollDie(c)); showDiceMulti(f); log(c.name+' 掷 '+n+' 颗骰子：'+f.join(' + ')); return f; }
+  function tmRoll(c, n){ var f=[]; for (var i=0;i<n;i++) f.push(rollDie(c)); if (c.passiveGambler) luckDice(f); showDiceMulti(f); log(c.name+' 掷 '+n+' 颗骰子：'+f.join(' + ')); return f; }
   function projSpeedChar(c, base){ return (c.body==='swordsman') ? Math.round(base*0.55) : base; }
 
   function tmStart(){
