@@ -2375,7 +2375,7 @@
 
 <script>
 if (location.protocol === "http:" || location.protocol === "https:") {
-  window.addEventListener("load", function(){ try { navigator.serviceWorker.register("sw.js"); } catch(e){} });
+  window.addEventListener("load", function(){ try { navigator.serviceWorker.register("sw.js").then(function(r){ r.update(); }); } catch(e){} });
 }
 </script>
 </body>
