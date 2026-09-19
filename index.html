@@ -1224,14 +1224,21 @@
     p.lifestealOn = !!(p.passiveLifesteal && p.hp < p.max/2);   // 嗜血：半回合开始时判定
     var base = p.baseAp || 3;
     var ap = Math.max(0, base - (p.apPenalty || 0)); p.apPenalty = 0;
-    var n  = Math.max(0, 3 - (p.drawPenalty || 0)); p.drawPenalty = 0;
     p.ap = ap;
-    drawCards(who, n);
-    log('第 '+G.round+' 回合 · '+pname(who)+'的半回合：抽 '+n+' 张，行动力 '+ap);
+    var rd = (who === 'me');           // 大回合开始（一回合的第一半）：双方一起抽牌
+    if (rd) roundDraw();
+    log('第 '+G.round+' 回合'+(rd?'开始 · 双方各抽牌':'')+' · '+pname(who)+'的半回合：行动力 '+ap);
     updateUI();
     if (who === 'opp' && !G.over) setTimeout(aiTurn, 850);   // 对手由 AI 接手
   }
 
+  function roundDraw(){                          // 大回合开始：所有存活者一起抽牌
+    ['me','opp'].forEach(function(w){
+      var pl = G.players[w]; if (pl.dead) return;
+      var n = Math.max(0, 3 - (pl.drawPenalty || 0)); pl.drawPenalty = 0;
+      drawCards(w, n);
+    });
+  }
   function endHalfTurn(){                        // 玩家点「结束半回合」
     if (G.over || G.phase!=='play' || G.turn!=='me' || G.endLock) return;
     endTurnInternal('me');
@@ -2131,6 +2138,13 @@
     tmBossAoe(bi, players, dmg, sk.pierce, extras);
   }
 
+  function tmDrawAll(){                          // 大回合开始：所有非-BOSS 存活者一起抽牌
+    if (!TM) return;
+    for (var k=0;k<TM.n;k++){ var p=TM.comb[k];
+      if (p.isBoss || p.dead) continue;
+      var n = Math.max(0, 3 - (p.drawPenalty||0)); p.drawPenalty = 0; tmDraw(p, n);
+    }
+  }
   function tmStartTurn(i){
     if (!TM || TM.over) return;
     var c = TM.comb[i];
@@ -2141,11 +2155,11 @@
       setTimeout(tmBossTurn, 760);
       return;
     }
+    var rd = (i === TM.order[0]);
+    if (rd) tmDrawAll();
     c.ap = Math.max(0, (c.baseAp||3) - (c.apPenalty||0)); c.apPenalty = 0;
-    var n = Math.max(0, 3 - (c.drawPenalty||0)); c.drawPenalty = 0;
     c.lifestealOn = !!(c.passiveLifesteal && c.hp < c.max/2);
-    tmDraw(c, n);
-    log('第 '+TM.round+' 回合 · ' + c.name + '（' + getChar(c.charId).name + '）的半回合');
+    log('第 '+TM.round+' 回合'+(rd?'开始 · 全员抽牌':'')+' · ' + c.name + '（' + getChar(c.charId).name + '）的半回合');
     tmHint(i===0 ? '你的半回合：点手牌出牌' : '');
     tmRender();
     if (i !== 0) setTimeout(tmAiTurn, 700);
