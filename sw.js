@@ -1,4 +1,4 @@
-const C = 'yueyuan-v3';
+const C = 'yueyuan-v4';
 self.addEventListener('install', e => { self.skipWaiting(); });
 self.addEventListener('activate', e => {
   e.waitUntil(
