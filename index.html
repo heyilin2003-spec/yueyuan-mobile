@@ -526,6 +526,11 @@
 
   /* 手牌 */
   .hand{ left:6px; right:6px; bottom:80px; }
+  /* 版本号（角落） */
+  #verTag{ position:fixed; right:8px; top:6px; bottom:auto; z-index:90; pointer-events:none;
+    font-size:10.5px; font-weight:700; letter-spacing:.08em; color:rgba(178,200,222,.5);
+    text-shadow:0 1px 2px rgba(0,0,0,.65); }
+
   .hand .mini{ width:84px; height:116px; }
   .hand .mini .cc{ font-size:13px; } .hand .mini .cn{ font-size:11px; }
   .hand .mini .ca{ font-size:18px; margin:6px 2px; } .hand .mini .ce{ font-size:8.5px; }
@@ -590,6 +595,7 @@
 </style>
 </head>
 <body>
+  <div id="verTag">v1.0.1</div>
   <div class="table" id="table">
     <div class="dawnbg" id="dawnBg"></div>
     <div class="centerline"></div>
@@ -996,10 +1002,10 @@
     rd_fuxiao:  { name:'拂晓叹辉', cost:0, cls:'c-skl', face:'退破晓·回3', text:'退出「破晓」状态 + 回 3 血', heal:3, dawnExit:true },
     pas_reaper: { name:'被动·魂损', cost:0, cls:'c-pas', face:'魂', text:'对方的「生命损失」结算后不消失，保留一半层数', passive:true },
     rp_seize:   { name:'汲魂者', cost:2, cls:'c-sta', face:'斩杀', text:'斩杀 HP≤8 的敌人（无视一切机制）；斩杀失败则自身回 2 血', execute:true },
-    rp_scythe:  { name:'死神之镰', cost:1, cls:'c-sta', face:'1损·2盾', text:'1 点生命损失 + 自身 2 点护盾', lifeloss:1, block:2 },
+    rp_scythe:  { name:'死神之镰', cost:1, cls:'c-sta', face:'3损', text:'3 点生命损失', lifeloss:3 },
     rp_soul:    { name:'反制·亡魂', cost:1, cls:'c-cnt', face:'反', text:'对方用攻击牌 → 打断攻击 + 按自身已损失血量 1/4 追加生命损失', counter:true, counterType:'foeAttack' },
     rp_gut:     { name:'反制·断肠', cost:1, cls:'c-cnt', face:'反', text:'对方回血时 → 造成回血量×2 的生命损失', counter:true, counterType:'foeHeal' },
-    rp_void:    { name:'反制·湮灵', cost:1, cls:'c-cnt', face:'反', text:'对方下回合加护盾时 → 自身抽 2 张牌', counter:true, counterType:'foeShield' },
+    rp_void:    { name:'反制·湮灵', cost:1, cls:'c-cnt', face:'反', text:'对手半回合主动抽牌超过 2 张时 → 自身抽 2 张牌', counter:true, counterType:'foeDraw' },
     rp_ghost:   { name:'灵体', cost:2, cls:'c-skl', face:'闪避30%', text:'对方的半回合自身获 30% 闪避（可叠加；可闪避灼烧/中毒）', dodgePct:0.3 },
     rp_enter:   { name:'入魂', cost:0, cls:'c-skl', face:'+1能·2♥', text:'回 1 点行动力 + 回 2 点生命', apGain:1, heal:2 },
     rp_strike:  { name:'普攻', cost:1, cls:'c-atk', face:'3穿', text:'3 点穿刺伤害', dmg:3, pierce:true },
@@ -1471,7 +1477,7 @@ var SPRITE_BAIZHUO = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAfkAAAHgCAYA
     rd_fuhui:   function(k,d){ k.heal(d.heal||2); k.shield(d.block||2); },
     rd_fuxiao:  function(k,d){ k.dawnExit(); k.heal(d.heal||3); },
     rp_seize:   function(k,d){ k.execute(); },
-    rp_scythe:  function(k,d){ k.lifeLoss(d.lifeloss||1); k.shield(d.block||2); },
+    rp_scythe:  function(k,d){ k.lifeLoss(d.lifeloss||3); },
     rp_ghost:   function(k,d){ k.dodge(d.dodgePct||0.3); },
     rp_enter:   function(k,d){ k.gainAp(d.apGain||1); k.heal(d.heal||2); },
     rp_strike:  function(k,d){ k.attack([{dmg:d.dmg||3, pierce:true}]); },
@@ -1528,7 +1534,7 @@ var SPRITE_BAIZHUO = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAfkAAAHgCAYA
     k.heal    = function(n){ heal(who, n); };
     k.shield  = function(n){ if (p.limitActive==='noshield'){ showFloat(who, '禁 盾', 'block'); log(pname(who)+' 被「禁盾」：无法获得护盾'); return; } if (G.bstat && n>0) G.bstat[who].shield += n; p.shield = Math.min(30, p.shield + n); shieldFx(who,'gain'); showFloat(who, '+'+n, 'gain'); if (n > 0) cntEventCheck(enemyOf(who), 'foeShield'); };   // 湮灵：对方加盾
     k.gainAp  = function(n){ p.ap += n; };
-    k.draw    = function(n){ drawCards(who, n); };
+    k.draw    = function(n){ drawCards(who, n, true); };   // 主动抽牌（计入湮灵触发）
     k.buff    = function(n){ p.dmgBuff = (p.dmgBuff||0) + n; showFloat(who, '增伤+'+n, 'gain'); };
     k.cut     = function(n){ p.costCut = n; };
     k.weak    = function(n){ if (fp.weak <= 0) fp.weak = n||1; };
@@ -1584,7 +1590,7 @@ var SPRITE_BAIZHUO = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAfkAAAHgCAYA
     k.heal    = function(n){ tmHeal(me, n); };
     k.shield  = function(n){ if (me.limitActive==='noshield'){ tmFloat(me,'禁 盾','block'); log(me.name+' 被「禁盾」：无法获得护盾'); return; } if (TM.bstat && n>0) TM.bstat[si].shield += n; me.shield = Math.min(30, me.shield + n); tmShieldFx(me,'gain'); if (n>0){ var _sen = tmAliveEnemies(si); for (var _sq=0;_sq<_sen.length;_sq++) tmCntEventCheck(_sen[_sq], 'foeShield'); } };   // 湮灵：对方加盾
     k.gainAp  = function(n){ me.ap += n; };
-    k.draw    = function(n){ tmDraw(me, n); };
+    k.draw    = function(n){ tmDraw(me, n, true); };   // 主动抽牌（计入湮灵触发）
     k.buff    = function(n){ me.dmgBuff = (me.dmgBuff||0) + n; tmFloat(me, '增伤+'+n, 'gain'); };
     k.cut     = function(n){ me.costCut = n; };
     k.weak    = function(n){ if (foe && foe.weak <= 0) foe.weak = n||1; };
@@ -1778,7 +1784,7 @@ var SPRITE_BAIZHUO = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAfkAAAHgCAYA
     if (p.limitPending){ p.limitActive = p.limitPending; p.limitPending = null; log(pname(who)+' 本半回合受限制器「'+limName(p.limitActive)+'」影响'); }
     else { p.limitActive = null; }
     cntCheckDmg12(who);                          // 反制·青云舞月：对手半回合受伤≥10 → 自己半回合开始前触发
-    p.cntTaken = 0; p.cntHits = 0; p.cntFoeCards = 0; p.dodge = 0;   // 重置反制监听窗口 + 闪避（对方半回合已过）（对手半回合计数）
+    p.cntTaken = 0; p.cntHits = 0; p.cntFoeCards = 0; p.dodge = 0; p.halfDraw = 0;   // 重置反制监听窗口 + 闪避（对方半回合已过）（对手半回合计数）+ 本半回合主动抽牌数
     if (G.over) return;
     p.lifestealOn = !!p.passiveLifesteal; p.healPool = 0; p.rageOn = false;   // 嗜血：常驻 30%，累计清零、增伤标记重置
     if (p.passiveLifesteal && p.hp <= 10){ p.rageOn = true; p.dmgBuff = (p.dmgBuff || 0) + 1; showFloat(who, '嗜血增伤 +1', 'gain'); }
@@ -1798,10 +1804,10 @@ var SPRITE_BAIZHUO = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAfkAAAHgCAYA
     if (who === 'opp' && !G.over){ if (G.dummy) setTimeout(dummyAct, 300); else setTimeout(aiTurn, 850); }   // 对手 AI；打桩模式木桩按设置行动
   }
 
-  function pityPassive(pl, hand, deck, round){     // 保底：被动牌 5 回合内必得
+  function pityPassive(pl, hand, deck, round, force){   // 保底：被动牌 3 回合内必得（force=true 立即保底：BOSS 关第 1 回合用）
     var isP = function(c){ return c && DEFS[c.key] && DEFS[c.key].passive; };
     if (pl.field.some(isP) || hand.some(isP)) return;
-    if (round < 5) return;
+    if (!force && round < 3) return;
     for (var i=0;i<deck.length;i++){ if (isP(deck[i])){ hand.push(deck.splice(i,1)[0]); log(pl.name + ' 的被动牌保底到手'); return; } }
   }
   function roundDraw(){                          // 大回合开始：所有存活者一起抽牌
@@ -1968,9 +1974,9 @@ var SPRITE_BAIZHUO = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAfkAAAHgCAYA
       var n3 = (amount||0) * 2;
       G.players[foe].lifeLoss = (G.players[foe].lifeLoss||0) + n3;
       log(pname(owner)+' 反制「'+d.name+'」触发：对方回血 '+(amount||0)+' → 追加 '+n3+' 点生命损失');
-    } else if (d.counterType === 'foeShield'){      // 湮灵：对方加盾 → 抽 2 张
+    } else if (d.counterType === 'foeDraw' || d.counterType === 'foeShield'){   // 湮灵：对手半回合主动抽牌超过 2 张 → 抽 2 张
       drawCards(owner, 2);
-      log(pname(owner)+' 反制「'+d.name+'」触发：对方加护盾 → 抽 2 张牌');
+      log(pname(owner)+' 反制「'+d.name+'」触发：对手本半回合主动抽牌超过 2 张 → 抽 2 张牌');
     }
     showCounterFlip(d);
     updateUI();
@@ -2000,12 +2006,17 @@ var SPRITE_BAIZHUO = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAfkAAAHgCAYA
     for (var j=0;j<hit.length;j++) cntTrigger1v1(owner, hit[j]);
   }
 
-  function drawCards(who, n){
+  function drawCards(who, n, manual){
     var p = G.players[who];
     if (p && p.limitActive==='nodraw' && n > 0){ showFloat(who, '禁 抽', 'block'); log(pname(who)+' 被「禁抽」：本次抽牌无效'); return; }
+    var got = 0;
     for (var i=0;i<n;i++){
       if (p.deck.length === 0) break;
-      p.hand.push(p.deck.shift());        // 被动牌也进手牌，由玩家手动打出
+      p.hand.push(p.deck.shift()); got++;   // 被动牌也进手牌，由玩家手动打出
+    }
+    if (manual && got > 0){                 // 湮灵：对手半回合「主动抽牌」累计超过 2 张 → 触发
+      p.halfDraw = (p.halfDraw||0) + got;
+      if (p.halfDraw > 2) cntEventCheck(enemyOf(who), 'foeDraw');
     }
   }
 
@@ -3739,7 +3750,15 @@ var SPRITE_BAIZHUO = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAfkAAAHgCAYA
   function tmShieldFx(c, mode){ var el=c.av.querySelector('.shieldfx'); if(!el) return; el.classList.remove('on','absorb'); void el.offsetWidth; el.classList.add('on'); if(mode==='absorb') el.classList.add('absorb'); setTimeout(function(){ el.classList.remove('on','absorb'); },900); }
   function tmFall(c){ c.av.classList.remove('hit','attack','kneel','fall','grayed'); c.av.classList.add('dead','dissolve'); var fl=c.av.querySelector('.flash'); if (fl){ fl.className='flash unmake'; void fl.offsetWidth; fl.classList.add('on'); } }
   function tmHeal(c, n){ if (c.limitActive==='noheal' && n > 0){ tmFloat(c,'禁 疗','block'); return; } if (c.dawn && n > 0) n = Math.max(0, n - 2); if (c.healCap > 0){ var _al = Math.max(0, c.healCap - (c.healUsed||0)); if (n > _al) n = _al; c.healUsed = (c.healUsed||0) + n; } if (n > 0 && TM){ var _hi = TM.comb.indexOf(c); if (_hi >= 0){ var _hen = tmAliveEnemies(_hi); for (var _hq=0; _hq<_hen.length; _hq++) tmCntEventCheck(_hen[_hq], 'foeHeal', n); } } var _thp=c.hp; c.hp = Math.min(c.max, c.hp+n); if (TM && TM.bstat){ var _ti2=TM.comb.indexOf(c); if(_ti2>=0) TM.bstat[_ti2].heal += (c.hp-_thp); } tmFloat(c, '+'+n, 'gain'); }
-  function tmDraw(c, n){ if (c.limitActive==='nodraw' && n > 0){ tmFloat(c,'禁 抽','block'); return; } for (var i=0;i<n;i++){ if (!c.deck.length) break; c.hand.push(c.deck.shift()); } }
+  function tmDraw(c, n, manual){
+    if (c.limitActive==='nodraw' && n > 0){ tmFloat(c,'禁 抽','block'); return; }
+    var got = 0;
+    for (var i=0;i<n;i++){ if (!c.deck.length) break; c.hand.push(c.deck.shift()); got++; }
+    if (manual && got > 0 && TM){            // 湮灵：本半回合主动抽牌累计超过 2 张 → 敌方反制触发
+      c.halfDraw = (c.halfDraw||0) + got;
+      if (c.halfDraw > 2){ var _si = TM.comb.indexOf(c); if (_si >= 0){ var _en = tmAliveEnemies(_si); for (var _q=0;_q<_en.length;_q++) tmCntEventCheck(_en[_q], 'foeDraw'); } }
+    }
+  }
   function tmHit(fi, ti, base, pierce){
     var from = TM.comb[fi], to = TM.comb[ti];
     if (TM.over || to.dead) return 0;
@@ -3842,9 +3861,9 @@ var SPRITE_BAIZHUO = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAfkAAAHgCAYA
       var n3 = (amount||0) * 2;
       if (ens.length) TM.comb[ens[0]].lifeLoss = (TM.comb[ens[0]].lifeLoss||0) + n3;
       log(c.name+' 反制「'+d.name+'」触发：敌方回血 '+(amount||0)+' → 追加 '+n3+' 点生命损失');
-    } else if (d.counterType === 'foeShield'){      // 湮灵
+    } else if (d.counterType === 'foeDraw' || d.counterType === 'foeShield'){   // 湮灵
       tmDraw(c, 2);
-      log(c.name+' 反制「'+d.name+'」触发：敌方加护盾 → 抽 2 张牌');
+      log(c.name+' 反制「'+d.name+'」触发：对手本半回合主动抽牌超过 2 张 → 抽 2 张牌');
     }
     showCounterFlip(d);
     tmRender();
@@ -4184,7 +4203,7 @@ var SPRITE_BAIZHUO = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAfkAAAHgCAYA
       var n = Math.max(0, 3 + (p.drawBonus||0) - (p.drawPenalty||0)); p.drawPenalty = 0; tmDraw(p, n);
     }
     for (var j=0;j<TM.n;j++){ var c=TM.comb[j]; if (c.isBoss || c.dead) continue;
-      pityPassive({ name:c.name, field:c.field }, c.hand, c.deck, TM.round);
+      pityPassive({ name:c.name, field:c.field }, c.hand, c.deck, TM.round, !!(TM.bossMode && TM.round === 1));   // BOSS 关第 1 回合：被动牌必得
     }
   }
   function tmActivateLimiter(si){
@@ -4210,7 +4229,7 @@ var SPRITE_BAIZHUO = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAfkAAAHgCAYA
       return;
     }
     tmCntCheckDmg12(i);                          // 反制·青云舞月：敌方半回合受伤≥10 → 自己半回合开始前触发
-    c.cntTaken = 0; c.cntHits = 0; c.cntFoeCards = 0; c.dodge = 0;   // 重置反制监听窗口 + 闪避
+    c.cntTaken = 0; c.cntHits = 0; c.cntFoeCards = 0; c.dodge = 0; c.halfDraw = 0;   // 重置反制监听窗口 + 闪避 + 本半回合主动抽牌数
     if (TM.over) return;
     var rd = (i === TM.order[0]);
     if (rd) tmDrawAll();
@@ -4418,7 +4437,7 @@ var SPRITE_BAIZHUO = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAfkAAAHgCAYA
   document.getElementById('diffRow').addEventListener('click', function(e){
     var el = e.target.closest('.diffbtn'); if (!el) return;
     chosenDiff = el.dataset.diff;
-    document.querySelectorAll('.diffbtn').forEach(function(b){ b.classList.toggle('on', b.dataset.diff===chosenDiff); });
+    document.querySelectorAll('#diffRow .diffbtn').forEach(function(b){ b.classList.toggle('on', b.dataset.diff===chosenDiff); });
   });
   document.getElementById('modeRow').addEventListener('click', function(e){
     var el = e.target.closest('.diffbtn'); if (!el) return;
