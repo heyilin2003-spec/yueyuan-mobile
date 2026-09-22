@@ -4,7 +4,7 @@
  *  - 其他资源(图片/图标)：缓存优先（图片 URL 带 ?h=<指纹>，改了才会重新下）
  *  - 离线：回退缓存
  */
-const C = 'yueyuan-v5';
+const C = 'yueyuan-v6';
 
 self.addEventListener('install', e => { self.skipWaiting(); });
 
