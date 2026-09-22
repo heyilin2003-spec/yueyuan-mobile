@@ -193,6 +193,12 @@
   .debuffs{ display:flex; gap:6px; margin-top:6px; flex-wrap:wrap; }
   .debuff{ font-size:10.5px; padding:3px 9px; border-radius:999px; color:#ffcf9a; background:rgba(255,140,60,.18); box-shadow:inset 0 0 0 1px rgba(255,160,80,.5); }
   .debuff.passive{ color:#cbd8ff; background:rgba(120,150,255,.16); box-shadow:inset 0 0 0 1px rgba(140,170,255,.5); }
+  .debuff.limit{ color:#ffd4d4; background:rgba(224,64,64,.22); box-shadow:inset 0 0 0 1px rgba(255,110,110,.7);
+    font-weight:700; animation:limitPulse 1.3s ease-in-out infinite; }
+  .debuff.limit.pending{ color:#e2caca; background:rgba(170,80,80,.14); box-shadow:inset 0 0 0 1px rgba(210,130,130,.45);
+    font-weight:500; animation:none; }
+  @keyframes limitPulse{ 0%,100%{ box-shadow:inset 0 0 0 1px rgba(255,110,110,.65); }
+    50%{ box-shadow:inset 0 0 0 1px rgba(255,120,120,1), 0 0 10px rgba(255,80,80,.55); } }
 
   /* 对手手牌（摊开可见） */
   .foehand{ position:absolute; top:34px; left:36px; display:flex; gap:8px; z-index:2; }
@@ -232,6 +238,50 @@
   .hand{ position:absolute; left:388px; right:248px; bottom:22px; display:flex; flex-wrap:nowrap; gap:0; justify-content:center; align-items:flex-end; z-index:3; }
   .hand .mini{ width:96px; height:132px; flex:0 0 auto; margin-left:var(--ov,-46px); }
   .hand .mini:first-child{ margin-left:0; }
+  /* ---- 点一下看大图 / 向上拖出牌（触摸 + 鼠标同一套） ---- */
+  .hand .mini{ touch-action:none; -webkit-user-select:none; user-select:none; }
+  .hand .mini.dragging{ z-index:45; will-change:transform; }
+  .hand .mini.armed{ box-shadow:0 0 0 2px #7fe0a8, 0 10px 28px rgba(120,240,170,.55); }
+  .mini.flying{ position:fixed; margin:0 !important; z-index:95; pointer-events:none;
+    transition:transform .36s cubic-bezier(.22,.8,.3,1), opacity .36s ease-out; }
+  .mini.gather{ transition:transform .28s cubic-bezier(.22,.8,.3,1); }
+  @keyframes peekIn{ from{ opacity:0; transform:scale(.9) translateY(10px); } to{ opacity:1; transform:none; } }
+  .cardpeek.on .pk{ animation:peekIn .2s ease-out; }
+  .dragbar{ position:fixed; left:0; right:0; bottom:150px; z-index:60; display:none; text-align:center;
+    font-size:13px; font-weight:700; letter-spacing:.2em; color:#bff0cf; text-shadow:0 2px 6px rgba(0,0,0,.85); pointer-events:none; }
+  .dragbar.on{ display:block; }
+  .handtip{ position:fixed; left:50%; transform:translateX(-50%); bottom:172px; z-index:6; font-size:11.5px;
+    letter-spacing:.06em; color:#9ec7b4; background:rgba(6,20,14,.72); padding:4px 11px; border-radius:999px;
+    pointer-events:none; transition:opacity .5s; }
+  .handtip.hide{ opacity:0; }
+  .cardpeek{ position:fixed; inset:0; z-index:88; display:none; align-items:center; justify-content:center; background:rgba(3,8,6,.78); }
+  .cardpeek.on{ display:flex; }
+  .cardpeek .pk{ position:relative; width:min(72vw,300px); height:min(96vw,400px); }
+  .cardpeek .pk .mini{ width:100%; height:100%; border-radius:18px; }
+  .cardpeek .pk .mini .cc{ width:30px; height:30px; font-size:16px; top:10px; left:11px; }
+  .cardpeek .pk .mini .cn{ font-size:17px; margin:10px 26px 0; line-height:1.3; }
+  .cardpeek .pk .mini .sep{ margin:9px 10px; }
+  .cardpeek .pk .mini .ce{ font-size:13px; line-height:1.55; padding:0 16px 24px; }
+  .cardpeek .pkbar{ position:absolute; left:0; right:0; bottom:-32px; text-align:center; font-size:11.5px; letter-spacing:.06em; color:#9fb0c8; }
+  /* ---- 卡组弹层：我的 / 对手 分页 ---- */
+  .pmtabs{ display:flex; gap:8px; justify-content:center; margin:0 0 10px; }
+  .pmtabs button{ font-family:inherit; font-size:12px; letter-spacing:.08em; padding:6px 16px; border-radius:999px;
+    border:1px solid rgba(255,255,255,.22); background:rgba(255,255,255,.07); color:#dfe9f2; cursor:pointer; }
+  .pmtabs button.on{ background:linear-gradient(180deg,#6fd39a,#3f9f6b); color:#08261a; border-color:transparent; font-weight:700; }
+  .minibtn{ font-family:inherit; font-size:10.5px; padding:4px 11px; border-radius:8px; border:1px solid rgba(255,255,255,.25);
+    background:rgba(255,255,255,.08); color:#cfe0ee; cursor:pointer; }
+  .minibtn:hover{ background:rgba(255,255,255,.16); }
+  /* ---- 状态说明弹层（点徽标看解释，新玩家友好） ---- */
+  [data-tip]{ cursor:pointer; }
+  [data-tip]:active{ opacity:.75; }
+  .tipbox{ position:fixed; inset:0; z-index:92; display:none; align-items:center; justify-content:center; background:rgba(3,8,6,.74); }
+  .tipbox.on{ display:flex; }
+  .tipbox .tbinner{ max-width:min(86vw,430px); background:linear-gradient(160deg,#172a20,#0c1812); border:1px solid rgba(160,220,180,.35);
+    border-radius:14px; padding:16px 18px; box-shadow:0 18px 44px rgba(0,0,0,.65); animation:peekIn .18s ease-out; }
+  .tipbox .tbname{ font-size:15.5px; font-weight:800; color:#dcf7e6; margin-bottom:8px; letter-spacing:.02em; }
+  .tipbox .tbtext{ font-size:13px; line-height:1.62; color:#cfe3d6; }
+  .tipbox .tbclose{ margin-top:12px; font-size:11px; color:#8ea2b4; text-align:center; }
+
   .hand .mini .cc{ width:22px; height:22px; font-size:13px; } .hand .mini .cn{ font-size:12px; }
   .hand .mini .ce{ font-size:10px; padding-bottom:13px; } .hand .mini .own-chip{ font-size:8.5px; padding:1px 6px; }
 
@@ -257,7 +307,8 @@
   .endbtn{ font-family:inherit; font-size:13px; letter-spacing:.14em; padding:11px 24px; border-radius:12px; border:1px solid rgba(255,255,255,.3);
     background:linear-gradient(180deg,#e0a53a,#b97a1c); color:#231502; font-weight:800; cursor:pointer; box-shadow:0 8px 18px rgba(0,0,0,.4); }
   .endbtn:hover{ filter:brightness(1.08); }
-  .endbtn:disabled{ filter:grayscale(.6) brightness(.7); cursor:not-allowed; }
+  .endbtn.limbtn{ background:linear-gradient(180deg,#e2603f,#a3311c); color:#fff4ef; }
+  .endbtn:disabled{ filter:grayscale(.85) brightness(.6); opacity:.55; cursor:not-allowed; }
   .drawpile{ font-size:11px; color:#9fb2c4; letter-spacing:.08em; text-align:right; }
 
   /* 中央信息 */
@@ -424,10 +475,17 @@
   .tm-slot.isboss .debuff.plague.on{ color:#eaffd8; background:rgba(90,235,90,.3); box-shadow:inset 0 0 0 1px rgba(150,255,150,.95), 0 0 12px rgba(120,255,120,.5); }
   .drawpile{ cursor:pointer; }
   .drawpile:hover{ color:#fff; }
-  #drawpile{ font-size:12px; color:#e6eef8; text-align:center; background:rgba(255,255,255,.09); border:1px solid rgba(255,255,255,.24); border-radius:15px; padding:7px 20px; line-height:1.25; box-shadow:0 6px 16px rgba(0,0,0,.3); }
-  #drawpile b{ display:block; font-size:18px; letter-spacing:.2em; font-weight:800; }
-  #drawpile span{ display:block; font-size:10px; color:#9fb2c4; letter-spacing:.06em; margin-top:1px; }
-  #drawpile:hover{ background:rgba(255,255,255,.17); color:#fff; }
+  /* 牌形状的「查看卡组」按钮 */
+  #drawpile{ position:relative; width:52px; height:70px; border-radius:9px; cursor:pointer;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px;
+    background:linear-gradient(158deg,#4a3670,#241640); border:1px solid rgba(196,176,255,.55);
+    box-shadow:0 6px 16px rgba(0,0,0,.45), inset 0 0 0 1px rgba(255,255,255,.07);
+    color:#efe6ff; transition:transform .12s ease-out, box-shadow .12s ease-out; }
+  #drawpile::after{ content:''; position:absolute; inset:4px; border-radius:6px; border:1px dashed rgba(212,192,255,.3); pointer-events:none; }
+  #drawpile:hover{ transform:translateY(-2px); box-shadow:0 9px 20px rgba(0,0,0,.5); }
+  #drawpile .cb-n{ font-size:17px; font-weight:800; line-height:1; letter-spacing:.02em; }
+  #drawpile .cb-t{ font-size:8.5px; letter-spacing:.16em; color:#c9b8ee; }
+  #drawpile .cb-s{ font-size:8px; letter-spacing:.02em; color:#9d8fc4; }
   .deckpreview{ cursor:pointer; }
 
   /* ---- 组队 2v2 ---- */
@@ -482,6 +540,8 @@
   .projectile.lightsword{ width:84px; height:18px; filter:drop-shadow(0 0 10px rgba(255,230,140,.95)); }
   .projectile.radiantqi{ width:50px; height:120px; filter:drop-shadow(0 0 10px rgba(255,225,140,.95)); }
   .projectile.crescent{ width:52px; height:52px; filter:drop-shadow(0 0 10px rgba(168,85,247,.95)); }
+  .projectile.mingball{ width:78px; height:42px; filter:drop-shadow(0 0 7px rgba(20,20,20,.55)); }
+  .projectile.dragonclaw{ width:44px; height:110px; filter:drop-shadow(0 0 8px rgba(224,168,60,.85)); }
   .debuff.ghost{ color:#d8c9ff; background:rgba(120,90,220,.22); box-shadow:inset 0 0 0 1px rgba(170,140,255,.6); }
 
   .hint{ font-size:12px; color:#8ea2b4; letter-spacing:.04em; }
@@ -526,6 +586,8 @@
 
   /* 手牌 */
   .hand{ left:6px; right:6px; bottom:80px; }
+  /* 触摸端提示位置（手机布局：手牌在底部 80px 处） */
+  .handtip{ bottom:200px; } .dragbar{ bottom:206px; }
   /* 版本号（角落） */
   #verTag{ position:fixed; right:8px; top:6px; bottom:auto; z-index:90; pointer-events:none;
     font-size:10.5px; font-weight:700; letter-spacing:.08em; color:rgba(178,200,222,.5);
@@ -541,6 +603,12 @@
   .util{ left:6px; right:6px; bottom:4px; flex-direction:row; flex-wrap:wrap; align-items:center; justify-content:center; gap:6px; }
   .endbtn{ font-size:12px; padding:9px 16px; border-radius:10px; order:-1; }
   .drawpile{ font-size:9.5px; text-align:center; }
+  /* A1：底部两层——上排（难度/战绩）在下排按钮行之上，互不遮挡 */
+  .actionbar{ left:6px; right:6px; bottom:4px; justify-content:center; flex-wrap:wrap; gap:6px; }
+  .util{ left:6px; right:6px; bottom:46px; justify-content:center; gap:6px; }
+  /* 手机：牌形状的「卡组」按钮 → 固定在右上角（下方 util 行会被按钮行盖住，不能放那儿） */
+  #drawpile{ width:44px; height:60px; position:fixed; right:8px; top:26px; left:auto; bottom:auto; order:0; z-index:7; }
+  #drawpile .cb-n{ font-size:15px; } #drawpile .cb-t{ font-size:7.5px; } #drawpile .cb-s{ font-size:7px; }
   .reselect{ font-size:10px; padding:6px 10px; border-radius:8px; }
 
   /* 组队 / BOSS 多人站位 */
@@ -595,7 +663,7 @@
 </style>
 </head>
 <body>
-  <div id="verTag">v1.0.1</div>
+  <div id="verTag">v1.0.2</div>
   <div class="table" id="table">
     <div class="dawnbg" id="dawnBg"></div>
     <div class="centerline"></div>
@@ -617,7 +685,7 @@
       <div class="status">
         <div class="pname">对 手</div>
         <div class="hpbar"><i id="oppHpFill"></i><span id="oppHpText">30 / 30</span></div>
-        <div class="chips"><span class="chip ap">行动力 <b id="oppAp">3</b></span><span class="chip sh">护盾 <b id="oppSh">0</b></span></div>
+        <div class="chips"><span class="chip ap" data-tip="行动力|每半回合的行动资源，打牌要消耗；半回合开始时回满（基础 3 点）">行动力 <b id="oppAp">3</b></span><span class="chip sh" data-tip="护盾|抵挡普通伤害；不能挡穿刺伤害，也不能挡生命损失。上限 30">护盾 <b id="oppSh">0</b></span></div>
         <div class="debuffs" id="oppDebuffs"></div>
       </div>
     </div>
@@ -642,7 +710,7 @@
       <div class="status">
         <div class="pname">你</div>
         <div class="hpbar"><i id="myHpFill"></i><span id="myHpText">30 / 30</span></div>
-        <div class="chips"><span class="chip ap">行动力 <b id="myAp">3</b></span><span class="chip sh">护盾 <b id="mySh">0</b></span></div>
+        <div class="chips"><span class="chip ap" data-tip="行动力|每半回合的行动资源，打牌要消耗；半回合开始时回满（基础 3 点）">行动力 <b id="myAp">3</b></span><span class="chip sh" data-tip="护盾|抵挡普通伤害；不能挡穿刺伤害，也不能挡生命损失。上限 30">护盾 <b id="mySh">0</b></span></div>
         <div class="debuffs" id="myDebuffs"></div>
       </div>
     </div>
@@ -653,13 +721,13 @@
     <div class="counters" id="myCounters"></div>
 
     <div class="util">
-      <div class="drawpile" id="drawpile"><b>牌堆</b><span>你 12 · 敌 12</span></div>
+      <div class="drawpile" id="drawpile" title="点开查看你的卡组/牌堆"><b class="cb-n">12</b><span class="cb-t">卡 组</span></div>
       <div class="drawpile" id="diffLabel">难度：普通</div>
       <button class="reselect" id="statsBtn">战 绩</button>
     </div>
     <button class="backbtn" id="reselectBtn">← 返 回</button>
     <div class="actionbar">
-      <button class="endbtn" id="limBtn" style="background:linear-gradient(180deg,#8a5a20,#5a3a12)">限 制 器</button>
+      <button class="endbtn limbtn" id="limBtn">限 制 器</button>
       <button class="endbtn" id="endBtn">结 束 半 回 合</button>
       <button class="reselect" id="statBtnSmall" style="align-self:center">统 计</button>
     </div>
@@ -935,8 +1003,8 @@
   '</svg>';
 
   /* 剑客立绘（base64 内嵌，见文件末尾注入） */
-  var SPRITE_SWORDSMAN = "sprites/swordsman.png?h=654f617c";
-  var SPRITE_GAMBLER = "sprites/gambler.png?h=f63b82b7";
+  var SPRITE_SWORDSMAN = "sprites/swordsman.webp?h=6118e34c";
+  var SPRITE_GAMBLER = "sprites/gambler.webp?h=193f7dac";
   var DEFS = {
     strike : { name:'普通攻击', cost:1, cls:'c-atk', face:'4',    text:'造成 4 点伤害',        dmg:4 },
     strike3: { name:'普通攻击', cost:1, cls:'c-atk', face:'3',    text:'造成 3 点伤害',        dmg:3 },
@@ -985,7 +1053,7 @@
     pas_mo:    { name:'被动·汲能', cost:0, cls:'c-pas', face:'汲', text:'自己半回合内对敌方造成 ≥10 点伤害 → 吸取对方下个半回合的行动力，加到自己下个半回合', passive:true },
     pas_god:   { name:'被动·超模', cost:0, cls:'c-pas', face:'神', text:'每回合获得 2 层增伤 + 抽 2 张牌', passive:true },
     godstrike: { name:'神罚',   cost:0, cls:'c-atk', face:'10穿', text:'造成 10 点穿刺伤害 + 抽 1 张牌', dmg:10, pierce:true, draw:1 },
-    pas_holy:  { name:'被动·驰骋', cost:0, cls:'c-pas', face:'盾3', text:'每回合获得 3 点护盾；对方每对自己造成 4 次伤害，回复 2 点血量', passive:true },
+    pas_holy:  { name:'被动·驰骋', cost:0, cls:'c-pas', face:'盾2', text:'每回合获得 2 点护盾；对方每对自己造成 4 次伤害，回复 1 点血量', passive:true },
     holy_charge:{ name:'冲锋',   cost:1, cls:'c-atk', face:'3+2盾', text:'造成 3 点伤害 + 获得 2 点护盾', dmg:3, block:2 },
     holy_ray:   { name:'圣耀',   cost:0, cls:'c-skl', face:'+1能',  text:'增加 1 点行动力', apGain:1 },
     holy_pure:  { name:'圣洁',   cost:1, cls:'c-atk', face:'4+回2',  text:'造成 4 点伤害 + 恢复 2 点生命', dmg:4, heal:2 },
@@ -1021,6 +1089,21 @@
     cnt_cloud:  { name:'反制·青云舞月', cost:1, cls:'c-cnt', face:'反', text:'对手半回合你受伤≥10 → 半回合末对对方造成（对手出牌数×2）穿刺', counter:true, counterType:'takeDmg12' },
     cnt_river:  { name:'反制·江烟舞雩', cost:1, cls:'c-cnt', face:'反', text:'对手半回合你受伤 5 次 → 回 2 血 + 对手 2 点生命损失', counter:true, counterType:'takeHits5' },
     cnt_wind:   { name:'泠袖舞风', cost:1, cls:'c-cnt', face:'反', text:'对手半回合出牌达 4 → 回 2 血 + 下次自己半回合行动力 +1', counter:true, counterType:'foeCards4' },
+    ming_changhong: { name:'长虹逐日', cost:1, cls:'c-skl', face:'+1♥·抽2', text:'回 1 血 + 抽 2 张牌', heal:1, draw:2 },
+    ming_wuhuo:   { name:'舞火流风', cost:0, cls:'c-skl', face:'+3♥+1能', text:'回 3 血 + 回 1 行动力 + 自身 1 层易伤（上限 1 层）', heal:3, apGain:1, selfVuln:1 },
+    ming_shuiyue: { name:'水月镜明', cost:1, cls:'c-atk', face:'+2♥·2穿', text:'回 2 血 + 2 点穿刺伤害', heal:2, dmg:2, pierce:true },
+    ming_xingxi:  { name:'星稀月雨', cost:1, cls:'c-skl', face:'治愈', text:'本半回合获得「治愈」+1 层（血量<10 → +2 层）：每次回血 +1，上限 2 层', healBuff:1 },
+    ming_liuri:   { name:'流日云辉', cost:1, cls:'c-atk', face:'自伤2×1', text:'对自身造成 2 次 1 点伤害（受易伤加成，计入明霞高灼）；若自身有异常 → 回复等于伤害量的血', selfHits:2, selfHitDmg:1 },
+    pas_ming:     { name:'被动·明霞高灼', cost:0, cls:'c-pas', face:'P', text:'己方半回合开始：把本大回合内受到的伤害加总 −5 → 对对方造成等量伤害（普通伤害，护盾可挡/可闪避）', passive:true },
+    dr_ice:   { name:'龙凌冰息', cost:1, cls:'c-atk', face:'1+冻1', text:'造成 1 点伤害 + 给对手 +1 层冻结值；若对手处于灼烧 → 其下回合不能用「原费 0」的牌', dmg:1, freezeOne:1 },
+    dr_ember: { name:'龙烬炎息', cost:1, cls:'c-atk', face:'1+烧1·自伤1', text:'造成 1 点伤害 + 给对手 +1 层灼烧；若对手有冻结值 → 其下回合回血前 3 点失效；并对自己造成 1 点穿刺', dmg:1, burn:1, healBlock:3, selfPierce:1 },
+    dr_word:  { name:'残灭龙语', cost:1, cls:'c-skl', face:'抽3', text:'抽 3 张牌', draw:3 },
+    dr_blood: { name:'锋爪血泣', cost:0, cls:'c-skl', face:'回3/+2能', text:'不耗行动力；敌方血量 > 一半 → 回 3 血；≤ 一半 → 获得 2 点行动力', heal:3, apGain:2 },
+    dr_wing:  { name:'龙羽翼袭', cost:1, cls:'c-atk', face:'3穿+回2', text:'造成 3 点穿刺伤害 + 回 2 血', dmg:3, pierce:true, heal:2 },
+    dr_meteor:{ name:'龙陨千石', cost:1, cls:'c-atk', face:'自伤1·回3', text:'先对自己造成 1 点穿刺自伤 → 再回 3 血', selfPierce:1, heal:3 },
+    dr_claw:  { name:'覆世百爪', cost:1, cls:'c-atk', face:'3+减1费', text:'造成 3 点伤害 + 下一张牌费用 -1', dmg:3, costCut:1 },
+    dr_moon:  { name:'龙月之渊', cost:0, cls:'c-skl', face:'+1能·抽息', text:'+1 行动力；从牌组抽 1 张「龙息」牌（冰息/烬炎息）', apGain:1, pullBreath:true },
+    pas_scale:{ name:'被动·鳞', cost:0, cls:'c-pas', face:'鳞', text:'自身造成伤害时蓄力 +1 层（下一次攻击伤害 ×(1+层数)，含穿刺，用掉清零）；每个己方半回合开始获得 1 点护盾', passive:true },
     passive: { name:'被动·?',   cost:0, cls:'c-pas', face:'P',    text:'（效果待定）', passive:true }
   };
   var DECK_KEYS = ['strike','strike','strike','strike','multi','multi','multi','burn','burn','shield','shield','passive'];
@@ -1036,7 +1119,7 @@
     '<path d="M40,120 q-16,12 -20,34 q18,-2 30,-16 z" fill="#4a3d73"/><path d="M160,120 q16,12 20,34 q-18,-2 -30,-16 z" fill="#4a3d73"/>' +
     '<g fill="#b39ddb" opacity=".9"><circle cx="62" cy="150" r="3.4"/><circle cx="140" cy="146" r="3"/><circle cx="74" cy="186" r="2.6"/><circle cx="128" cy="190" r="2.6"/></g>' +
   '</svg>';
-var SPRITE_BAIZHUO = "sprites/baizhuo.png?h=a2ffd8ca";
+var SPRITE_BAIZHUO = "sprites/baizhuo.webp?h=0437686f";
   /* 白灼立绘占位 SVG（已被 SPRITE_BAIZHUO 取代，保留备用） */
   var BZFIG = '' +
   '<svg viewBox="0 0 200 240" xmlns="http://www.w3.org/2000/svg">' +
@@ -1093,6 +1176,10 @@ var SPRITE_BAIZHUO = "sprites/baizhuo.png?h=a2ffd8ca";
     { id:'baizhuo', name:'白灼', tag:'灼烧 · 焚砚', desc:'攻击时附加灼烧；自身受伤也会反噬对手；攻击带盾或异常的敌人附带穿刺',
       main:'#ff8a3d', dark:'#9c4412', body:'baizhuo',
       deck:['pas_fenyan','bz_shadow','bz_shadow','bz_glow','bz_glow','bz_ash','bz_ash','bz_blaze','bz_blaze','bz_strike','bz_strike','bz_strike'] },
+    { id:'ming', name:'明', tag:'回血 · 反灼', desc:'越挨打越强：一个大回合内受到的伤害超过 5 的部分，下回合当作伤害打回给对手',
+      main:'#d97ba8', dark:'#8a3f63', body:'ming',
+      deck:['pas_ming','ming_changhong','ming_changhong','ming_wuhuo','ming_wuhuo','ming_shuiyue','ming_shuiyue','ming_shuiyue','ming_xingxi','ming_xingxi','ming_liuri','ming_liuri'] },
+    { id:'dragon', name:'龙', tag:'自伤 · 爆发', desc:'自伤积攒「鳞」，下一次攻击翻倍；冰火双息互相喂状态、压制治疗', main:'#e0a83c', dark:'#8a6314', body:'dragon', noAI:true, deck:['pas_scale','dr_ice','dr_ember','dr_word','dr_blood','dr_wing','dr_wing','dr_meteor','dr_meteor','dr_claw','dr_claw','dr_moon'] },
     { id:'mo', name:'莫', tag:'汲能 · 寂灭', desc:'打够伤害就夺人行动力；寂灭状态强化自身爆发',
       main:'#6b5bd2', dark:'#3b2f7a', body:'mo', hidden:true,   // 收进密码测试入口（可改）
       deck:['pas_mo','mf_san','mf_san','mf_qian','mf_qian','mf_ye','mf_ye','mf_ling','mf_ling','mf_meng','mf_meng','mf_ji'] },
@@ -1103,15 +1190,18 @@ var SPRITE_BAIZHUO = "sprites/baizhuo.png?h=a2ffd8ca";
   ];
   function getChar(id){ for (var i=0;i<CHARACTERS.length;i++) if (CHARACTERS[i].id===id) return CHARACTERS[i]; return CHARACTERS[0]; }
   var TEST_ON = false, TEST_PW = '080093';   // ← 测试入口密码（想改改这里）
-  function playableChars(){ return TEST_ON ? CHARACTERS.slice() : CHARACTERS.filter(function(c){ return !c.hidden; }); }   // 隐藏的内测角色：仅测试模式可见
-  var SPRITE_GIANT = "sprites/giant.png?h=db8b7bc1";
-  var SPRITE_VENOM = "sprites/venom.png?h=b97a25fc";
-  var SPRITE_RANGER = "sprites/ranger.png?h=3bf20ccf";
-  var SPRITE_TRICKSTER = "sprites/trickster.png?h=47fd37f9";
-  var SPRITE_DANCER = "sprites/dancer.png?h=b109fbd1";
-  var SPRITE_RADIANT  = "sprites/radiant.png?h=c9945de4";
-  var SPRITE_RADIANT2 = "sprites/radiant2.png?h=c75a59db";
-  var SPRITE_REAPER = "sprites/reaper.png?h=057f6281";
+  function playableChars(){ return TEST_ON ? CHARACTERS.slice() : CHARACTERS.filter(function(c){ return !c.hidden; }); }
+  function aiChars(){ return playableChars().filter(function(c){ return !c.noAI; }); }   // AI 池：排除「AI 玩不懂」的角色（明）   // 隐藏的内测角色：仅测试模式可见
+  var SPRITE_DRAGON = "sprites/dragon.webp?h=1b45467f";
+  var SPRITE_GIANT = "sprites/giant.webp?h=4c1e7e4d";
+  var SPRITE_VENOM = "sprites/venom.webp?h=bfdd90eb";
+  var SPRITE_RANGER = "sprites/ranger.webp?h=2137a455";
+  var SPRITE_TRICKSTER = "sprites/trickster.webp?h=c6d0017a";
+  var SPRITE_DANCER = "sprites/dancer.webp?h=23e21fb9";
+  var SPRITE_RADIANT  = "sprites/radiant.webp?h=af6ad863";
+  var SPRITE_RADIANT2 = "sprites/radiant2.webp?h=011aa8b0";
+  var SPRITE_REAPER = "sprites/reaper.webp?h=9ebb5554";
+  var SPRITE_MING = "sprites/ming.webp?h=d9f3b532";
   function bodyHTML(body){
     if (body === 'swordsman') return '<img class="sprite" src="' + SPRITE_SWORDSMAN + '" alt="">';
     if (body === 'gambler')   return '<img class="sprite" src="' + SPRITE_GAMBLER + '" alt="">';
@@ -1126,6 +1216,8 @@ var SPRITE_BAIZHUO = "sprites/baizhuo.png?h=a2ffd8ca";
     if (body === 'radiant')    return '<img class="sprite rform rform1" src="' + SPRITE_RADIANT + '" alt=""><img class="sprite rform rform2" src="' + SPRITE_RADIANT2 + '" alt="">';
     if (body === 'reaper')     return '<img class="sprite" src="' + SPRITE_REAPER + '" alt="">';
     if (body === 'baizhuo')    return '<img class="sprite" src="' + SPRITE_BAIZHUO + '" alt="">';
+    if (body === 'ming')       return '<img class="sprite" src="' + SPRITE_MING + '" alt="">';
+    if (body === 'dragon')     return '<img class="sprite" src="' + SPRITE_DRAGON + '" alt="">';
     if (body === 'dummy')      return DUMMYFIG;
     if (body === 'mo')         return MOFIG;
     return body === 'trickster' ? TRICKSTER : RANGER;
@@ -1138,10 +1230,11 @@ var SPRITE_BAIZHUO = "sprites/baizhuo.png?h=a2ffd8ca";
   var proj = document.getElementById('proj');
   var table = document.getElementById('table');
   var busy = false;
+  var SIMULATING = false;   // 静默模拟：true 时副作用函数全部短路（AI 搜索用，正常游玩恒为 false）
 
   var G;
   function newPlayer(deckKeys, owner){
-    return { hp:30, max:30, shield:0, ap:0, baseAp:3, hand:[], field:[], deck:makeDeckFrom(deckKeys || DECK_KEYS, owner || 'me'), burn:0, weak:0, lifeLoss:0, drawPenalty:0, apPenalty:0, dmgTaken:0, poison:0, passiveLifesteal:false, lifestealOn:false, passiveGambler:false, passivePoison:false, counters:[], cntTaken:0, cntHits:0, cntFoeCards:0, dodge:0, dead:false, limitPending:null, limitActive:null, limiter:null };
+    return { hp:30, max:30, shield:0, ap:0, baseAp:3, hand:[], field:[], deck:makeDeckFrom(deckKeys || DECK_KEYS, owner || 'me'), burn:0, weak:0, lifeLoss:0, drawPenalty:0, apPenalty:0, dmgTaken:0, poison:0, passiveLifesteal:false, lifestealOn:false, passiveGambler:false, passivePoison:false, counters:[], cntTaken:0, cntHits:0, cntFoeCards:0, dodge:0, dead:false, limitPending:null, limitActive:null, limiter:null, vuln:0, healBuff:0, mingPool:0, passiveMing:false, passiveScale:false, scaleReady:false, freeze:0, frozen:false, noZero:false, healBlock:0, healWatch:false, healWatchAcc:0, skipPlay:false };
   }
   function makeDeckFrom(keys, owner){
     var arr = keys.map(function(k,i){ return { uid:k + '_' + i + '_' + Math.random().toString(36).slice(2,6), key:k, owner: owner || 'me' }; });
@@ -1165,14 +1258,14 @@ var SPRITE_BAIZHUO = "sprites/baizhuo.png?h=a2ffd8ca";
     applyColors('me', cm); applyColors('opp', co);
     avatars.me.querySelector('.rig').innerHTML  = bodyHTML(cm.body);
     avatars.opp.querySelector('.rig').innerHTML = bodyHTML(co.body);
-    avatars.me.classList.toggle('imgchar', cm.body === 'swordsman' || cm.body === 'gambler' || cm.body === 'ranger' || cm.body === 'trickster' || cm.body === 'venom' || cm.body === 'dancer' || cm.body === 'radiant' || cm.body === 'reaper' || cm.body === 'baizhuo' || cm.body === 'dummy');
-    avatars.opp.classList.toggle('imgchar', co.body === 'swordsman' || co.body === 'gambler' || co.body === 'ranger' || co.body === 'trickster' || co.body === 'venom' || co.body === 'dancer' || co.body === 'radiant' || co.body === 'reaper' || co.body === 'baizhuo' || co.body === 'dummy');
+    avatars.me.classList.toggle('imgchar', cm.body === 'swordsman' || cm.body === 'gambler' || cm.body === 'ranger' || cm.body === 'trickster' || cm.body === 'venom' || cm.body === 'dancer' || cm.body === 'radiant' || cm.body === 'reaper' || cm.body === 'baizhuo' || cm.body === 'ming' || cm.body === 'dragon' || cm.body === 'dummy');
+    avatars.opp.classList.toggle('imgchar', co.body === 'swordsman' || co.body === 'gambler' || co.body === 'ranger' || co.body === 'trickster' || co.body === 'venom' || co.body === 'dancer' || co.body === 'radiant' || co.body === 'reaper' || co.body === 'baizhuo' || co.body === 'ming' || co.body === 'dragon' || co.body === 'dummy');
     document.querySelector('.me .pname').textContent = '你 · ' + cm.name;
     document.querySelector('.opp .pname').textContent = '对手 · ' + co.name;
     G = { players:{ me:newPlayer(cm.deck,'me'), opp:newPlayer(co.deck,'opp') }, turn:'me', round:1, phase:'play', over:false, endLock:false, swapMode:false, difficulty: chosenDiff,
           log:{ me:{dmg:0,cards:[]}, opp:{dmg:0,cards:[]} } };
     G.players.me.limiter  = newLimiter(chosenLimiter || randLimId());
-    G.players.opp.limiter = newLimiter(randLimId());
+    G.players.opp.limiter = newLimiter(pickLimiterFor(chosenOpp, chosenMe));   // AI 按玩家职业特点选限制器
     G.bstat = { me:{dmg:0,burn:0,poison:0,lifeloss:0,taken:0,heal:0,shield:0,cards:0}, opp:{dmg:0,burn:0,poison:0,lifeloss:0,taken:0,heal:0,shield:0,cards:0} };
     G.players.me.charId = cm.id; G.players.opp.charId = co.id;
     if (DUMMY_MODE){ G.dummy = true; var _op = G.players.opp; _op.hp = 9999; _op.max = 9999; _op.deck = []; _op.hand = []; _op.limiter = null; }
@@ -1184,26 +1277,29 @@ var SPRITE_BAIZHUO = "sprites/baizhuo.png?h=a2ffd8ca";
   }
 
   /* ================= 动画工具 ================= */
-  function restart(el, cls){ el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); }
-  function anim(el, cls, ms){ restart(el, cls); setTimeout(function(){ el.classList.remove(cls); }, ms); }
+  function restart(el, cls){ if (SIMULATING) return; el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); }
+  function anim(el, cls, ms){ if (SIMULATING) return; restart(el, cls); setTimeout(function(){ el.classList.remove(cls); }, ms); }
   function showFloat(who, text, cls){
+    if (SIMULATING) return;
     var d = avatars[who].querySelector('.dmg');
     d.className = 'dmg' + (cls ? ' ' + cls : '');
     d.textContent = text; void d.offsetWidth; d.classList.add('on');
   }
   function flashAvatar(who, kind){
+    if (SIMULATING) return;
     var f = avatars[who].querySelector('.flash');
     f.className = 'flash' + (kind ? ' ' + kind : '');
     restart(f, 'on');
   }
-  function shake(who, kind){ anim(avatars[who], 'hit', 520); flashAvatar(who, kind); }
+  function shake(who, kind){ if (SIMULATING) return; anim(avatars[who], 'hit', 520); flashAvatar(who, kind); }
   function shieldFx(who, mode){
+    if (SIMULATING) return;
     var el = avatars[who].querySelector('.shieldfx');
     el.classList.remove('on','absorb'); void el.offsetWidth;
     el.classList.add('on'); if (mode==='absorb') el.classList.add('absorb');
     setTimeout(function(){ el.classList.remove('on','absorb'); }, 900);
   }
-  function recoil(who){ anim(avatars[who], 'attack', 520); }
+  function recoil(who){ if (SIMULATING) return; anim(avatars[who], 'attack', 520); }
 
   function setProjectileChar(ch, dawn){
     if (!ch){ proj.className='projectile'; return; }
@@ -1242,6 +1338,12 @@ var SPRITE_BAIZHUO = "sprites/baizhuo.png?h=a2ffd8ca";
     } else if (ch.body === 'gambler'){
       proj.className = 'projectile spincard';
       proj.innerHTML = '<svg viewBox="0 0 28 40"><rect x="1" y="1" width="26" height="38" rx="5" fill="#fff"/><rect x="1.6" y="1.6" width="24.8" height="36.8" rx="4.4" fill="none" stroke="#c9412f" stroke-width="1.6"/><path d="M14 9 L22 20 L14 31 L6 20 Z" fill="#c9412f"/></svg>';
+    } else if (ch.body === 'ming'){
+      proj.className = 'projectile mingball';
+      proj.innerHTML = '<svg viewBox="0 0 80 44"><path d="M4,22 Q24,11 46,22 Z" fill="#141414"/><path d="M4,22 Q24,33 46,22 Z" fill="#f4f4f4"/><path d="M4,22 Q24,11 46,22 Q24,33 4,22 Z" fill="none" stroke="#4a4a4a" stroke-width="1.2"/><circle cx="54" cy="22" r="14" fill="#f4f4f4" stroke="#3a3a3a" stroke-width="1.6"/><path d="M40,22 A14,14 0 0 1 68,22 Z" fill="#141414"/><circle cx="54" cy="22" r="14" fill="none" stroke="#3a3a3a" stroke-width="1.6"/></svg>';
+    } else if (ch.body === 'dragon'){
+      proj.className = 'projectile dragonclaw';
+      proj.innerHTML = '<svg viewBox="0 0 44 110"><path d="M3,50 Q22,46 41,49 Q22,53 3,50 Z" fill="#ffe6a8"/><path d="M33,6 Q24,52 10,104 Q20,50 33,6 Z" fill="#fff3d2"/><path d="M3,50 Q22,46 41,49" fill="none" stroke="#fff8dc" stroke-width="1"/></svg>';
     } else {
       proj.className = 'projectile';
       proj.innerHTML = '<svg viewBox="0 0 56 12"><line x1="0" y1="6" x2="44" y2="6" stroke="#d9c49a" stroke-width="3"/><polygon points="44,1 56,6 44,11" fill="#e6e6e6"/></svg>';
@@ -1254,9 +1356,10 @@ var SPRITE_BAIZHUO = "sprites/baizhuo.png?h=a2ffd8ca";
   }
   function projSpeed(from, base){
     var ch = getChar(from === 'me' ? chosenMe : chosenOpp);
-    return ch.body === 'swordsman' ? Math.round(base * 0.55) : base;   // 剑气更快
+    return ch.body === 'swordsman' ? Math.round(base * 0.55) : (ch.body === 'dragon' ? Math.round(base * 0.6) : base);   // 剑气/龙爪更快
   }
   function fireProjectile(from, to, dur, cb){
+    if (SIMULATING){ if (cb) cb(); return; }
     setProjectile(from);
     var s = avatars[from].getBoundingClientRect();
     var e = avatars[to].getBoundingClientRect();
@@ -1293,6 +1396,7 @@ var SPRITE_BAIZHUO = "sprites/baizhuo.png?h=a2ffd8ca";
   function takeHit(who, dmg, pierce, cb, dealer){
     var p = G.players[who];
     if (p.dead){ if (cb) cb(); return 0; }
+    if (p.vuln) dmg += p.vuln;                   // 易伤：每层每次受伤 +1
     var before = p.hp;
     if (!pierce && p.shield > 0){
       var absorbed = Math.min(p.shield, dmg);
@@ -1311,6 +1415,7 @@ var SPRITE_BAIZHUO = "sprites/baizhuo.png?h=a2ffd8ca";
     }
     p.dmgTaken = (p.dmgTaken || 0) + (before - p.hp);   // 记录本回合受创
     var lost = before - p.hp;
+    if (p.charId === 'ming' && p.passiveMing) p.mingPool = (p.mingPool||0) + lost;   // 明霞高灼：本大回合内受创累计（含自身半回合/自伤/DoT）
     if (G.bstat){ G.bstat[who].taken += lost; if (dealer && G.bstat[dealer]) G.bstat[dealer].dmg += lost; }
     if (dealer && G.turnStat && G.turnStat.seat === dealer) G.turnStat.dmg += lost;   // 本回合爆发，在死亡结算前记入
     updateUI();
@@ -1322,29 +1427,34 @@ var SPRITE_BAIZHUO = "sprites/baizhuo.png?h=a2ffd8ca";
   // 治疗
   function heal(who, n){
     var p = G.players[who];
+    if (!p || p.dead) return;                     // 已死亡：不再回血（防止“死了又回血”的状态错乱）
     if (p && p.limitActive==='noheal' && n > 0){ showFloat(who, '禁 疗', 'block'); log(pname(who)+' 被「禁疗」：本次回血无效'); return; }
+    if (p.healBuff && n > 0) n += p.healBuff;         // 治愈：每次回血 +N
     if (p.dawn && n > 0) n = Math.max(0, n - 2);      // 破晓：每次回血 -2
+    if (p.healBlock > 0 && n > 0){ var _hb = Math.min(p.healBlock, n); p.healBlock -= _hb; n -= _hb; if (_hb > 0){ showFloat(who, '回血失效 '+_hb, 'block'); log(pname(who)+' 有 '+_hb+' 点回血失效（龙烬炎息）'); } }   // 回血真空
     if (p.healCap > 0){ var _al = Math.max(0, p.healCap - (p.healUsed||0)); if (n > _al) n = _al; p.healUsed = (p.healUsed||0) + n; }
     if (n > 0) cntEventCheck(enemyOf(who), 'foeHeal', n);   // 断肠：对方回血时 → 回血量×2 的生命损失
     var _bhp = p.hp; p.hp = Math.min(p.max, p.hp + n);
+    if (p.healWatch && (p.hp - _bhp) > 0){ p.healWatchAcc = (p.healWatchAcc||0) + (p.hp - _bhp); while (p.healWatchAcc >= 3){ p.healWatchAcc -= 3; var _wt = enemyOf(who); drawCards(_wt, 1); showFloat(_wt, '龙语', 'gain'); log(pname(_wt)+' 残灭龙语：对方回血满 3 → 抽 1 张'); } }
     if (G.bstat) G.bstat[who].heal += (p.hp - _bhp);
     showFloat(who, '+'+n, 'gain');
     updateUI();
   }
   /* 光辉：debuff 判定 / 净化 / 破晓 */
-  function hasDebuff(p){ return (p.burn||0)>0 || (p.poison||0)>0 || (p.weak||0)>0 || (p.lifeLoss||0)>0 || (p.healCap||0)>0 || (p.freeze||0)>0 || !!p.frozen; }
-  function clearDebuffs(p){ p.burn=0; p.poison=0; p.weak=0; p.healCap=0; p.healUsed=0; p.freeze=0; p.frozen=false; }   // 不含生命损失
+  function hasDebuff(p){ return (p.burn||0)>0 || (p.poison||0)>0 || (p.weak||0)>0 || (p.lifeLoss||0)>0 || (p.healCap||0)>0 || (p.freeze||0)>0 || (p.vuln||0)>0 || !!p.frozen; }
+  function clearDebuffs(p){ p.burn=0; p.poison=0; p.weak=0; p.healCap=0; p.healUsed=0; p.freeze=0; p.frozen=false; p.vuln=0; }   // 不含生命损失
   function playXformEl(a){ if (!a) return; a.classList.remove('xform'); void a.offsetWidth; a.classList.add('xform'); setTimeout(function(){ a.classList.remove('xform'); }, 1500); }
   function playXformOutEl(a){ if (!a) return; a.classList.remove('xformout'); void a.offsetWidth; a.classList.add('xformout'); setTimeout(function(){ a.classList.remove('xformout'); }, 1000); }
   function updateDawnBg(){   // 场上有任一光辉处于破晓 → 全屏暖金渐变
+    if (SIMULATING) return;
     var on = false;
     if (typeof TM !== 'undefined' && TM && TM.comb){ for (var i=0;i<TM.n;i++){ if (TM.comb[i] && TM.comb[i].dawn){ on = true; break; } } }
     else if (G && G.players){ on = !!(G.players.me && G.players.me.dawn) || !!(G.players.opp && G.players.opp.dawn); }
     var el = document.getElementById('dawnBg'); if (el) el.classList.toggle('on', on);
   }
-  function playXform(who){ playXformEl(avatars[who]); }
-  function playXformOut(who){ playXformOutEl(avatars[who]); }
-  function showHitmarkEl(a){ if (!a) return; var m = a.querySelector('.hitmark'); if (!m) return; m.classList.remove('on'); void m.offsetWidth; m.classList.add('on'); setTimeout(function(){ m.classList.remove('on'); }, 520); }
+  function playXform(who){ if (SIMULATING) return; playXformEl(avatars[who]); }
+  function playXformOut(who){ if (SIMULATING) return; playXformOutEl(avatars[who]); }
+  function showHitmarkEl(a){ if (SIMULATING) return; if (!a) return; var m = a.querySelector('.hitmark'); if (!m) return; m.classList.remove('on'); void m.offsetWidth; m.classList.add('on'); setTimeout(function(){ m.classList.remove('on'); }, 520); }
   function isRadiantDawn(who){ try { var ch = getChar(who === 'me' ? chosenMe : chosenOpp); return ch.body === 'radiant' && G.players[who] && G.players[who].dawn; } catch(e){ return false; } }
   function enterDawn(who){ var p = G.players[who]; if (!p.dawn){ p.dawn = true; p.dmgBuff = (p.dmgBuff||0) + 1; } playXform(who); showFloat(who, '破晓', 'gain'); log(pname(who)+' 进入破晓状态（流辉形态）：+1 增伤，每次受伤 -1、每次回血 -2'); updateUI(); }
   function exitDawn(who){ var p = G.players[who]; if (p.dawn){ p.dawn = false; playXformOut(who); log(pname(who)+' 退出破晓状态'); updateUI(); } }
@@ -1352,6 +1462,7 @@ var SPRITE_BAIZHUO = "sprites/baizhuo.png?h=a2ffd8ca";
   // 由 from 发起的一次伤害：叠加增伤 + 被动转穿刺
   function hitFrom(from, to, base, pierce, cb){
     var fp = G.players[from];
+    if (!fp || !G.players[to]) return;          // 局已切换/重置（过期动画回调）→ 安全退出
     if (fp.passiveLifesteal && fp.hp <= 10 && !fp.rageOn){ fp.rageOn = true; fp.dmgBuff = (fp.dmgBuff || 0) + 1; showFloat(from, '嗜血增伤 +1', 'gain'); }   // 立即检测
     var dmg = base + (fp.dmgBuff || 0);
     if (fp.passiveRanger){
@@ -1359,7 +1470,6 @@ var SPRITE_BAIZHUO = "sprites/baizhuo.png?h=a2ffd8ca";
       else { fp.hitCount = (fp.hitCount || 0) + 1; if (fp.hitCount >= 2){ fp.charge = true; fp.hitCount = 0; } }
     }
     if (fp.weak > 0 && !pierce) dmg -= 1;    // 虚弱：非穿刺伤害每段 -1
-    if (fp.limitActive==='weakfield') dmg -= 1;   // 限制器·虚弱场：每段 -1
     if (fp.limitActive==='halfdmg') dmg = Math.floor(dmg/2);   // 限制器·伤害减半
     if (dmg < 0) dmg = 0;
     if (fp.passiveDancer && !pierce && G.players[to].shield > 0) dmg *= 2;   // 舞：非穿刺伤害击中护盾时翻倍
@@ -1380,7 +1490,7 @@ var SPRITE_BAIZHUO = "sprites/baizhuo.png?h=a2ffd8ca";
     }
     if (G.players[to].passiveHoly && lost > 0){          // 驰骋：每受到 4 次伤害，回 2 血
       var tp2 = G.players[to]; tp2.holyN = (tp2.holyN||0) + 1;
-      if (tp2.holyN >= 4){ tp2.holyN -= 4; heal(to, 2); showFloat(to, '+2', 'gain'); log(pname(to)+' 驰骋：受击 4 次 → 回复 2 血'); }
+      if (tp2.holyN >= 4){ tp2.holyN -= 4; heal(to, 1); showFloat(to, '+1', 'gain'); log(pname(to)+' 驰骋：受击 4 次 → 回复 1 血'); }
     }
     if (G.players[to].passiveRadiant && lost > 0){       // 辉：每受到对方 3 次攻击，回 2 血（DoT 不算）
       var tr2 = G.players[to]; tr2.radN = (tr2.radN||0) + 1;
@@ -1396,16 +1506,26 @@ var SPRITE_BAIZHUO = "sprites/baizhuo.png?h=a2ffd8ca";
   }
 
   // 多段攻击序列（每段一次飞箭）
+    function scaleReady(who){ var p = G.players[who]; if (!p || !p.passiveScale) return; p.scaleReady = (p.scaleReady||0) + 1; showFloat(who, '鳞 +'+p.scaleReady, 'gain'); log(pname(who)+' 的「鳞」蓄力：'+p.scaleReady+' 层（下次攻击 ×'+(1+p.scaleReady)+'）'); }
+  function tmScaleReady(c){ if (!c || !c.passiveScale) return; c.scaleReady = (c.scaleReady||0) + 1; tmFloat(c, '鳞 +'+c.scaleReady, 'gain'); log(c.name+' 的「鳞」蓄力：'+c.scaleReady+' 层（下次攻击 ×'+(1+c.scaleReady)+'）'); }
   function attackSeq(from, to, hits, extraPierce, onDone){
+    if (SIMULATING){                        // 静默：同帧结算，不做动画链
+      for (var _ai=0;_ai<hits.length;_ai++){ hitFrom(from, to, hits[_ai].dmg, !!hits[_ai].pierce); if (G.over) break; }
+      if (onDone) onDone();
+      return;
+    }
     recoil(from); busy = true;
+    var _G = G;                             // 本局标记：局被重置/切换后，过期动画链自动作废
     var n = hits.length, done = 0, stopped = false;
     var multi = n > 1;
     for (var i=0;i<n;i++){ (function(i){
       setTimeout(function(){
-        if (stopped || G.over) return;
+        if (_G !== G || stopped || G.over) return;
         fireProjectile(from, to, projSpeed(from, multi ? 220 : 400), function(){
+          if (_G !== G) return;
           if (isRadiantDawn(from)) showHitmarkEl(avatars[to]);
           hitFrom(from, to, hits[i].dmg, !!(hits[i].pierce || extraPierce), function(){
+            if (_G !== G) return;
             if (G.over){ stopped = true; busy = false; if (onDone) onDone(); return; }
             if (++done === n){ busy = false; updateUI(); if (onDone) onDone(); }
           });
@@ -1486,6 +1606,19 @@ var SPRITE_BAIZHUO = "sprites/baizhuo.png?h=a2ffd8ca";
     bz_ash:     function(k,d){ k.draw(k.foeHighHp() ? (d.drawIfFoeLow||2) : (d.draw||1)); },
     bz_blaze:   function(k,d){ k.selfDamage(d.selfDmg||1); k.lifestealNext(); },
     bz_strike:  function(k,d){ k.attack([{dmg:d.dmg||2}], function(){ if (d.draw) k.draw(d.draw); }); },
+    ming_changhong: function(k,d){ k.heal(d.heal||1); k.draw(d.draw||2); },
+    ming_wuhuo:   function(k,d){ k.heal(d.heal||3); k.gainAp(d.apGain||1); k.vulnSelf(d.selfVuln||1); },
+    ming_shuiyue: function(k,d){ k.heal(d.heal||2); k.attack([{dmg:d.dmg||2, pierce:true}]); },
+    ming_xingxi:  function(k,d){ k.healBuff((k.me && k.me.hp < 10) ? 2 : 1); },
+    ming_liuri:   function(k,d){ k.selfHits(d.selfHits||2, d.selfHitDmg||1); },
+    dr_ice:   function(k,d){ k.noScale = true; k.attack([{dmg:d.dmg||1}], function(){ k.freezeFoe(d.freezeOne||1); if (k.foeBurning()) k.noZeroFoe(); }); },
+    dr_ember: function(k,d){ k.noScale = true; k.attack([{dmg:d.dmg||1}], function(){ k.burn(d.burn||1); if (k.foeFrozenVal()) k.healBlockFoe(d.healBlock||3); k.selfPierce(d.selfPierce||1); }); },
+    dr_word:  function(k,d){ k.draw(d.draw||3); },
+    dr_blood: function(k,d){ if (k.foeHighHp()) k.heal(d.heal||3); else k.gainAp(d.apGain||2); },
+    dr_wing:  function(k,d){ k.attack([{dmg:d.dmg||3, pierce:d.pierce!==false}], function(){ k.heal(d.heal||1); }); },
+    dr_meteor:function(k,d){ k.selfPierce(d.selfPierce||1); k.heal(d.heal||3); },
+    dr_claw:  function(k,d){ k.attack([{dmg:d.dmg||3}], function(){ k.cut(d.costCut||1); }); },
+    dr_moon:  function(k,d){ k.gainAp(d.apGain||1); k.pullBreath(); },
   };
 
   /* ===== 困难难度：角色出牌偏好（评分接近时按此顺序挑；阿琳口述）===== */
@@ -1504,7 +1637,7 @@ var SPRITE_BAIZHUO = "sprites/baizhuo.png?h=a2ffd8ca";
     { id:'noshield',  name:'禁盾',   face:'禁盾', text:'对手下个半回合无法获得护盾' },
     { id:'nodraw',    name:'禁抽',   face:'禁抽', text:'对手下个半回合无法抽牌' },
     { id:'apdrain',   name:'枯竭',   face:'-2行', text:'对手下个半回合行动力 -2' },
-    { id:'weakfield', name:'虚弱场', face:'-1伤', text:'对手下个半回合每段伤害 -1' },
+    { id:'nopassive', name:'封被',   face:'禁被', text:'对手下个半回合被动效果全部失效（一局仅 1 次）' },
     { id:'halfdmg',   name:'伤害减半', face:'半伤', text:'对手下个半回合造成的伤害减半' },
     { id:'nocure',    name:'禁净',   face:'禁净', text:'对手下个半回合无法清除自身异常状态' }
   ];
@@ -1513,8 +1646,96 @@ var SPRITE_BAIZHUO = "sprites/baizhuo.png?h=a2ffd8ca";
   function dealtTotal(s){ return s ? (s.dmg||0)+(s.burn||0)+(s.poison||0)+(s.lifeloss||0) : 0; }   // 某方「造成伤害总量」
   var chosenLimiter = LIMITERS[0].id;
   function getLimiter(id){ for (var i=0;i<LIMITERS.length;i++) if (LIMITERS[i].id===id) return LIMITERS[i]; return null; }
+  var LIM_SHORT = { noheal:'不能回血', noshield:'不能加盾', nodraw:'不能抽牌', apdrain:'行动力 -2', nopassive:'被动失效', halfdmg:'伤害减半', nocure:'不能净化' };
+  /* ---- 限制器「封被」：临时关掉一个参战者的全部被动 ---- */
+  var PAS_KEYS = ['passiveLifesteal','lifestealOn','passiveHoly','passiveGod','passiveSiphon','passiveDancer','passiveRadiant',
+                  'passiveRanger','passiveTrickster','passivePoison','passiveGambler','passiveSoulLoss','passiveFenyan','passiveMing','passiveScale'];
+  function pasBlockOn(p){
+    if (!p || p.limitActive !== 'nopassive' || p._pasWas) return;
+    p._pasWas = {};
+    PAS_KEYS.forEach(function(k){ p._pasWas[k] = p[k]; p[k] = false; });
+    log((p.name || pname(p===G.players.me?'me':'opp')) + ' 的被动效果被封禁（本半回合）');
+  }
+  function pasBlockOff(p){
+    if (!p || !p._pasWas) return;
+    PAS_KEYS.forEach(function(k){ p[k] = p._pasWas[k]; });
+    p._pasWas = null;
+  }
+  function limChip(id, pending){
+    var L = getLimiter(id); if (!L) return '';
+    var eff = LIM_SHORT[L.id] || L.text;
+    if (eff === L.name) eff = '';                       // 名称已说明时不再重复
+    var tip = L.name + '：' + L.text;
+    return '<span class="debuff limit'+(pending?' pending':'')+'" data-tip="受制 · '+L.name+'|'+L.text+'">'
+      + (pending ? '下回合受制 · ' : '受制 · ') + L.name + (eff ? '（'+eff+'）' : '') + '</span>';
+  }
   function limName(id){ var L=getLimiter(id); return L?L.name:'?'; }
-  function newLimiter(id){ return { id:id, uses:2, readyAt:0 }; }
+  /* ================= AI：限制器的「选择」与「发动时机」（理性化） =================
+     选角：按「对手职业特点」挑（禁疗 vs 治疗型 / 禁盾 vs 盾型 / 禁抽 vs 抽牌型 / 封被 vs 吃被动 /
+           枯竭 vs 手牌多 / 伤害减半 vs 爆发型 / 禁净 vs 我方靠 DoT）
+     时机：只在「这半回合放下去明显有用」时才放（难度越高越敢放），不再一准备好就丢 */
+  var CHAR_TRAITS = {
+    ranger:    { heal:0.4, shield:0.5, draw:0.8, passive:0.6, burst:0.7, dot:0.0, cleanse:0.0 },
+    swordsman: { heal:0.8, shield:0.6, draw:0.5, passive:0.8, burst:1.0, dot:0.0, cleanse:0.0 },
+    trickster: { heal:0.8, shield:0.3, draw:1.0, passive:0.9, burst:0.5, dot:0.5, cleanse:0.0 },
+    gambler:   { heal:0.7, shield:0.2, draw:0.6, passive:0.7, burst:0.9, dot:0.0, cleanse:0.0 },
+    venom:     { heal:0.7, shield:0.6, draw:0.3, passive:0.9, burst:0.4, dot:1.0, cleanse:0.0 },
+    paladin:   { heal:0.9, shield:1.0, draw:0.4, passive:1.0, burst:0.5, dot:0.2, cleanse:0.3 },
+    dancer:    { heal:0.8, shield:0.4, draw:0.3, passive:0.9, burst:0.6, dot:0.2, cleanse:0.0 },
+    radiant:   { heal:1.0, shield:0.7, draw:0.7, passive:1.0, burst:0.6, dot:0.5, cleanse:1.0 },
+    reaper:    { heal:0.5, shield:0.2, draw:0.5, passive:1.0, burst:0.8, dot:0.9, cleanse:0.0 },
+    baizhuo:   { heal:0.8, shield:0.2, draw:0.6, passive:1.0, burst:0.7, dot:1.0, cleanse:0.0 },
+    ming:      { heal:1.0, shield:0.2, draw:0.7, passive:1.0, burst:0.5, dot:0.3, cleanse:0.0 },
+    dragon:    { heal:0.8, shield:0.3, draw:0.7, passive:0.6, burst:1.0, dot:0.5, cleanse:0.0 },
+    mo:        { heal:0.5, shield:0.5, draw:0.5, passive:0.5, burst:0.6, dot:0.5, cleanse:0.5 }
+  };
+  function traitOf(id, k){ var t = CHAR_TRAITS[id]; return (t && t[k] != null) ? t[k] : 0.5; }
+  function clamp01(v){ return v < 0 ? 0 : (v > 1 ? 1 : v); }
+  function limMatchup(id, myId, foeId){          // 对某对手的整体匹配度（选角用）
+    var f = function(k){ return traitOf(foeId, k); }, m = function(k){ return traitOf(myId, k); };
+    switch (id){
+      case 'noheal':    return f('heal');
+      case 'noshield':  return f('shield');
+      case 'nodraw':    return f('draw');
+      case 'apdrain':   return 0.45 + 0.35 * f('draw');
+      case 'nopassive': return f('passive');
+      case 'halfdmg':   return 0.35 + 0.55 * f('burst');
+      case 'nocure':    return 0.25 + 0.6 * m('dot') + 0.15 * f('cleanse');
+    }
+    return 0.5;
+  }
+  function pickLimiterFor(myId, foeId){           // AI 选限制器：从最优的 2~3 个里挑（保留一点随机）
+    var arr = LIMITERS.map(function(L){ return { id:L.id, v: limMatchup(L.id, myId, foeId) * (0.9 + Math.random() * 0.2) }; });
+    arr.sort(function(a, b){ return b.v - a.v; });
+    var pool = arr.slice(0, 2 + (Math.random() < 0.3 ? 1 : 0));
+    return (pool[Math.floor(Math.random() * pool.length)] || arr[0]).id;
+  }
+  function limValueNow(id, me, foe, meId, foeId){  // 「现在放」值不值（0~1，只用公开信息）
+    if (!foe) return 0.4;
+    var hpFrac = foe.max ? (foe.hp / foe.max) : 1;
+    switch (id){
+      case 'noheal':    return clamp01(traitOf(foeId, 'heal') * (hpFrac < 0.65 ? 1.0 : 0.5));
+      case 'noshield':  return clamp01(traitOf(foeId, 'shield') * (foe.shield > 0 ? 1.0 : 0.55));
+      case 'nodraw':    return clamp01(traitOf(foeId, 'draw') * ((foe.hand ? foe.hand.length : 3) <= 2 ? 0.8 : 1.0));
+      case 'apdrain':   return clamp01(0.45 + 0.35 * Math.min(1, ((foe.hand ? foe.hand.length : 0) + (foe.field ? foe.field.length : 0)) / 5));
+      case 'nopassive': return clamp01(traitOf(foeId, 'passive') * ((foe.field && foe.field.length) ? 1.0 : 0.45));
+      case 'halfdmg':   return clamp01(0.35 + 0.45 * traitOf(foeId, 'burst') + (me && me.max && me.hp / me.max < 0.5 ? 0.25 : 0));
+      case 'nocure':    return clamp01(0.3 + 0.5 * traitOf(meId, 'dot') + 0.2 * traitOf(foeId, 'cleanse'));
+    }
+    return 0.45;
+  }
+  function aiLimiterFire(me, foe, diff, meId, foeId){   // AI 该不该现在发动？（难度越高越敢放）
+    if (!me || !me.limiter || !(me.limiter.uses > 0) || !foe || foe.dead) return false;
+    if (diff === 'hard' && !hLimiterNow(me, foe)) return false;      // 困难：保留「本回合能斩杀就留一手」
+    var v = limValueNow(me.limiter.id, me, foe, meId, foeId);
+    var th = diff === 'easy' ? 0.8 : (diff === 'hard' ? 0.35 : 0.55);
+    if (v >= th) return true;
+    var r = (typeof G !== 'undefined' && G && G.round) || (typeof TM !== 'undefined' && TM && TM.round) || 1;   // 攥太久就放（别浪费）
+    var since = r - ((me.limiter && me.limiter.readyAt) || 0);
+    return since >= 4 && v >= 0.35;
+  }
+  function limUses(id){ return id === 'nopassive' ? 1 : 2; }      // 「封被」一局只能用 1 次
+  function newLimiter(id){ return { id:id, uses:limUses(id), readyAt:0 }; }
   function limReady(lm, round){ return !!lm && lm.uses>0 && round >= lm.readyAt; }
   function randLimId(){ return LIMITERS[Math.floor(Math.random()*LIMITERS.length)].id; }
 
@@ -1526,10 +1747,11 @@ var SPRITE_BAIZHUO = "sprites/baizhuo.png?h=a2ffd8ca";
     k.fallback = k.finish;
     k.attack = function(hits, cb2){
       k._async = true;
+      if (p.passiveScale && p.scaleReady > 0 && !k.noScale){ var _mul = 1 + p.scaleReady; hits = hits.map(function(h){ return { dmg:(h.dmg||0)*_mul, pierce:!!h.pierce }; }); p.scaleReady = 0; showFloat(who, '鳞 ×'+_mul, 'gain'); log(pname(who)+' 的「鳞」爆发：本次攻击 ×'+_mul); }
       if (p.passivePoison && !fp.dead){ fp.poison = (fp.poison||0) + 2*hits.length; showFloat(foe, '中毒 +'+(2*hits.length), 'fire'); }   // 鸩毒：出手瞬间按段数叠加
       var run = function(){ if (G.over || fp.dead){ k.finish(); return; }
         attackSeq(who, foe, hits, false, function(){ if (cb2) cb2(); k.finish(); }); };
-      if (k._dic){ k._dic = false; setTimeout(function(){ if (!G.over) run(); else k.finish(); }, 700); } else run();
+      if (k._dic){ k._dic = false; if (SIMULATING){ if (!G.over) run(); else k.finish(); } else setTimeout(function(){ if (!G.over) run(); else k.finish(); }, 700); } else run();
     };
     k.heal    = function(n){ heal(who, n); };
     k.shield  = function(n){ if (p.limitActive==='noshield'){ showFloat(who, '禁 盾', 'block'); log(pname(who)+' 被「禁盾」：无法获得护盾'); return; } if (G.bstat && n>0) G.bstat[who].shield += n; p.shield = Math.min(30, p.shield + n); shieldFx(who,'gain'); showFloat(who, '+'+n, 'gain'); if (n > 0) cntEventCheck(enemyOf(who), 'foeShield'); };   // 湮灵：对方加盾
@@ -1568,9 +1790,20 @@ var SPRITE_BAIZHUO = "sprites/baizhuo.png?h=a2ffd8ca";
     k.dodge     = function(n){ p.dodge = (p.dodge||0) + n; showFloat(who, '闪避+'+Math.round(n*100)+'%', 'gain'); log(pname(who)+' 获得 '+Math.round(n*100)+'% 闪避（对方半回合）'); };
     k.selfDamage = function(n){ if (!(n>0) || p.dead) return; p.hp = Math.max(0, p.hp - n); p.dmgTaken = (p.dmgTaken||0) + n; showFloat(who, '-'+n, 'fire'); log(pname(who)+' 自损 '+n+' 点生命'); if (p.hp <= 0){ die(who); return; } };   // 皓炎烬世：自伤（也算受击→触发焚砚）
     k.lifestealNext = function(){ p.lifestealFull = true; showFloat(who, '吸血待发', 'gain'); log(pname(who)+' 皓炎烬世：下次造成伤害时等额吸血'); };
+    k.vulnSelf = function(n){ n = n||1; p.vuln = Math.min(1, (p.vuln||0) + n); showFloat(who, '易伤 +'+p.vuln, 'fire'); log(pname(who)+' 获得 '+p.vuln+' 层易伤（每次受伤 +1，上限 1 层）'); };
+    k.healBuff = function(n){ n = n||1; p.healBuff = Math.min(2, (p.healBuff||0) + n); showFloat(who, '治愈 +'+p.healBuff, 'gain'); log(pname(who)+' 获得「治愈」'+p.healBuff+' 层（每次回血 +1，上限 2）'); };
+    k.selfHits = function(n, dmgEach){ if (p.dead) return; var per = dmgEach||1, total = 0; for (var i=0;i<(n||1);i++){ var dd = Math.max(0, per + (p.vuln||0)); p.hp = Math.max(0, p.hp - dd); total += dd; } p.dmgTaken = (p.dmgTaken||0) + total; if (p.passiveMing) p.mingPool = (p.mingPool||0) + total; showFloat(who, '-'+total, 'fire'); log(pname(who)+' 流日云辉：对自身造成 '+total+' 点伤害'+(p.passiveMing?'（计入明霞高灼）':'')); if (total > 0 && hasDebuff(p)){ heal(who, total); log(pname(who)+' 流日云辉：身有异常 → 回复 '+total+' 血'); } if (p.hp <= 0){ die(who); return; } updateUI(); };
     k.foeGuarded = function(){ return !!(fp && !fp.dead && (fp.shield > 0 || hasDebuff(fp))); };
     k.foeHighHp = function(){ return !!(fp && !fp.dead && fp.hp*2 > fp.max); };
     k.foeLowHp  = function(){ return !!(fp && !fp.dead && fp.hp*2 < fp.max); };
+    k.freezeFoe   = function(n){ if (!fp || fp.dead) return; fp.freeze = (fp.freeze||0) + n; showFloat(foe, '冻结 +'+n, 'fire'); if (fp.freeze >= 3 && !fp.frozen){ fp.freeze = 0; fp.frozen = true; log(pname(foe)+' 被冰封！下个半回合不能出牌'); showFloat(foe, '冰封！', 'fire'); } };
+    k.foeBurning  = function(){ return !!(fp && !fp.dead && (fp.burn||0) > 0); };
+    k.foeFrozenVal= function(){ return !!(fp && !fp.dead && (fp.freeze||0) > 0); };
+    k.noZeroFoe   = function(){ if (fp){ fp.noZero = true; showFloat(foe, '禁 0 费', 'fire'); log(pname(foe)+' 下回合不能用「原费 0」的牌'); } };
+    k.healBlockFoe= function(n){ if (fp){ fp.healBlock = (fp.healBlock||0) + n; showFloat(foe, '回血-'+n, 'fire'); log(pname(foe)+' 下回合前 '+n+' 点回血失效'); } };
+    k.selfPierce  = function(n){ if (!(n>0) || p.dead) return; p.hp = Math.max(0, p.hp - n); p.dmgTaken = (p.dmgTaken||0) + n; showFloat(who, '-'+n, 'pierce'); log(pname(who)+' 自伤 '+n+' 点穿刺'); if (p.passiveScale) scaleReady(who); if (p.hp <= 0){ die(who); return; } };
+    k.watchFoeHeal= function(){ if (fp){ fp.healWatch = true; fp.healWatchAcc = 0; } log(pname(who)+' 残灭龙语：对方下回合每回满 3 血 → 抽 1 张'); };
+    k.pullBreath  = function(){ var ks = ['dr_ice','dr_ember']; for (var _i=0;_i<p.deck.length;_i++){ if (ks.indexOf(p.deck[_i].key) >= 0){ p.hand.push(p.deck.splice(_i,1)[0]); showFloat(who, '抽龙息', 'gain'); log(pname(who)+' 从牌组抽到一张龙息牌'); return; } } log(pname(who)+' 牌组里没有龙息牌'); };
     return k;
   }
 
@@ -1583,6 +1816,7 @@ var SPRITE_BAIZHUO = "sprites/baizhuo.png?h=a2ffd8ca";
     k.attack = function(hits, cb2){
       k._async = true;
       if (me.blessHits && hits && hits.length){ var _h0 = hits[0]; for (var _hi=0; _hi<me.blessHits; _hi++) hits.push({ dmg:_h0.dmg, pierce:!!_h0.pierce }); }   // 祝福·攻击次数 +N 段
+      if (me.passiveScale && me.scaleReady > 0 && !k.noScale){ var _mul2 = 1 + me.scaleReady; hits = hits.map(function(h){ return { dmg:(h.dmg||0)*_mul2, pierce:!!h.pierce }; }); me.scaleReady = 0; tmFloat(me, '鳞 ×'+_mul2, 'gain'); log(me.name+' 的「鳞」爆发：本次攻击 ×'+_mul2); }
       if (me.passivePoison && foe && !foe.dead){ foe.poison = (foe.poison||0) + 2*hits.length; tmFloat(foe, '中毒 +'+(2*hits.length), 'fire'); }   // 鸩毒：出手瞬间按段数叠加
       if (ti < 0 || !foe){ k.finish(); return; }
       tmAttackSeq(si, ti, hits, function(){ if (cb2) cb2(); k.finish(); });
@@ -1623,9 +1857,20 @@ var SPRITE_BAIZHUO = "sprites/baizhuo.png?h=a2ffd8ca";
     k.dodge     = function(n){ me.dodge = (me.dodge||0) + n; tmFloat(me, '闪避+'+Math.round(n*100)+'%', 'gain'); log(me.name+' 获得 '+Math.round(n*100)+'% 闪避'); };
     k.selfDamage = function(n){ if (!(n>0) || me.dead) return; me.hp = Math.max(0, me.hp - n); me.dmgTaken = (me.dmgTaken||0) + n; tmFloat(me, '-'+n, 'fire'); log(me.name+' 自损 '+n+' 点生命'); if (me.hp <= 0){ me.dead = true; tmFall(me); tmCheckWin(); return; } };   // 皓炎烬世：自伤（也算受击→触发焚砚）
     k.lifestealNext = function(){ me.lifestealFull = true; tmFloat(me, '吸血待发', 'gain'); log(me.name+' 皓炎烬世：下次造成伤害时等额吸血'); };
+    k.vulnSelf = function(n){ n = n||1; me.vuln = Math.min(1, (me.vuln||0) + n); tmFloat(me, '易伤 +'+me.vuln, 'fire'); log(me.name+' 获得 '+me.vuln+' 层易伤（每次受伤 +1，上限 1 层）'); };
+    k.healBuff = function(n){ n = n||1; me.healBuff = Math.min(2, (me.healBuff||0) + n); tmFloat(me, '治愈 +'+me.healBuff, 'gain'); log(me.name+' 获得「治愈」'+me.healBuff+' 层（上限 2）'); };
+    k.selfHits = function(n, dmgEach){ if (me.dead) return; var per = dmgEach||1, total = 0; for (var i=0;i<(n||1);i++){ var dd = Math.max(0, per + (me.vuln||0)); me.hp = Math.max(0, me.hp - dd); total += dd; } me.dmgTaken = (me.dmgTaken||0) + total; if (me.passiveMing) me.mingPool = (me.mingPool||0) + total; tmFloat(me, '-'+total, 'fire'); log(me.name+' 流日云辉：自伤 '+total+(me.passiveMing?'（计入明霞高灼）':'')); if (total > 0 && hasDebuff(me)){ tmHeal(me, total); log(me.name+' 流日云辉：身有异常 → 回复 '+total+' 血'); } if (me.hp <= 0){ me.dead = true; tmFall(me); tmCheckWin(); } tmRender(); };
     k.foeGuarded = function(){ return !!(foe && !foe.dead && (foe.shield > 0 || hasDebuff(foe))); };
     k.foeHighHp = function(){ return !!(foe && !foe.dead && foe.hp*2 > foe.max); };
     k.foeLowHp  = function(){ return !!(foe && !foe.dead && foe.hp*2 < foe.max); };
+    k.freezeFoe   = function(n){ freezeTo(foe, n); };
+    k.foeBurning  = function(){ return !!(foe && !foe.dead && (foe.burn||0) > 0); };
+    k.foeFrozenVal= function(){ return !!(foe && !foe.dead && (foe.freeze||0) > 0); };
+    k.noZeroFoe   = function(){ if (foe){ foe.noZero = true; tmFloat(foe, '禁 0 费', 'fire'); log(foe.name+' 下回合不能用「原费 0」的牌'); } };
+    k.healBlockFoe= function(n){ if (foe){ foe.healBlock = (foe.healBlock||0) + n; tmFloat(foe, '回血-'+n, 'fire'); log(foe.name+' 下回合前 '+n+' 点回血失效'); } };
+    k.selfPierce  = function(n){ if (!(n>0) || me.dead) return; me.hp = Math.max(0, me.hp - n); me.dmgTaken = (me.dmgTaken||0) + n; tmFloat(me, '-'+n, 'pierce'); log(me.name+' 自伤 '+n+' 点穿刺'); if (me.passiveScale) tmScaleReady(me); if (me.hp <= 0){ me.dead = true; tmFall(me); tmCheckWin(); } };
+    k.watchFoeHeal= function(){ if (foe){ foe.healWatch = true; foe.healWatchAcc = 0; } log(me.name+' 残灭龙语：对方下回合每回满 3 血 → 抽 1 张'); };
+    k.pullBreath  = function(){ var ks = ['dr_ice','dr_ember']; for (var _i=0;_i<me.deck.length;_i++){ if (ks.indexOf(me.deck[_i].key) >= 0){ me.hand.push(me.deck.splice(_i,1)[0]); tmFloat(me, '抽龙息', 'gain'); log(me.name+' 从牌组抽到一张龙息牌'); return; } } log(me.name+' 牌组里没有龙息牌'); };
     return k;
   }
 
@@ -1636,6 +1881,9 @@ var SPRITE_BAIZHUO = "sprites/baizhuo.png?h=a2ffd8ca";
     var c = p.hand[idx]; if (!c) return;
     var d = DEFS[c.key];
     if (!d){ log('未知的牌：'+c.key); return; }   // 防御：卡表缺定义时不崩
+    if (d.passive && p.limitActive === 'nopassive'){ log(pname(who)+' 被「封被」：本半回合被动牌无法生效，先留着'); showFloat(who,'封 被','fire'); return; }
+    if (p.skipPlay){ log(pname(who)+' 被冰封：本半回合不能出牌'); showFloat(who,'冰 封','fire'); return; }
+    if (p.noZero && (d.cost||0) === 0){ log(pname(who)+' 被「龙凌冰息」封锁：不能用原费 0 的牌'); showFloat(who,'禁 0 费','fire'); return; }
     var pay = effCost(p, d);
     if (pay > p.ap){ log('行动力不足，出不了「'+d.name+'」'); return; }
 
@@ -1656,13 +1904,15 @@ var SPRITE_BAIZHUO = "sprites/baizhuo.png?h=a2ffd8ca";
       if (c.key === 'pas_sword'){ p.passiveLifesteal = true; p.lifestealOn = true; }   // 常驻 30% 吸血（当回合即生效）
       if (c.key === 'pas_gambler') p.passiveGambler = true;   // 千术：降低掷出 1/2/3 的概率
       if (c.key === 'pas_venom') p.passivePoison = true;      // 鸩毒：每次攻击给对方上 2 层中毒
-      if (c.key === 'pas_holy'){ p.passiveHoly = true; }       // 驰骋：每回合 +3 盾；每受 4 次伤害回 2 血
+      if (c.key === 'pas_holy'){ p.passiveHoly = true; }       // 驰骋：每回合 +2 盾；每受 4 次伤害回 1 血
       if (c.key === 'pas_god'){ p.passiveGod = true; }          // 内测·超模
       if (c.key === 'pas_mo'){ p.passiveSiphon = true; }        // 汲能：半回合伤害≥10 → 夺对方行动力
       if (c.key === 'pas_dancer'){ p.passiveDancer = true; }     // 舞：非穿刺伤害击中护盾时翻倍
       if (c.key === 'pas_radiant'){ p.passiveRadiant = true; }   // 辉：受击 3 次回 2 血
       if (c.key === 'pas_reaper'){ p.passiveSoulLoss = true; }   // 魂损：生命损失结算后保留一半层数
       if (c.key === 'pas_fenyan'){ p.passiveFenyan = true; }     // 焚砚：清空剩余行动力 → 每点给对手 3 层灼烧
+      if (c.key === 'pas_ming'){ p.passiveMing = true; }
+      if (c.key === 'pas_scale'){ p.passiveScale = true; }       // 鳞：自伤蓄力 → 下一次攻击翻倍         // 明霞高灼：对手半回合受创累计 → 下回合生命损失
       log(pname(who)+' 被动生效：'+d.name+'（不耗行动力）');
       updateUI(); return;
     }
@@ -1781,15 +2031,22 @@ var SPRITE_BAIZHUO = "sprites/baizhuo.png?h=a2ffd8ca";
     G.turnStat = { seat: who, dmg: 0, cards: [] };
     var p = G.players[who];
     p._burst = false; p._mini = false;
+    pasBlockOff(p);                          // 清上回合残留（保险）
     if (p.limitPending){ p.limitActive = p.limitPending; p.limitPending = null; log(pname(who)+' 本半回合受限制器「'+limName(p.limitActive)+'」影响'); }
     else { p.limitActive = null; }
+    pasBlockOn(p);                           // 「封被」：本半回合被动失效
     cntCheckDmg12(who);                          // 反制·青云舞月：对手半回合受伤≥10 → 自己半回合开始前触发
-    p.cntTaken = 0; p.cntHits = 0; p.cntFoeCards = 0; p.dodge = 0; p.halfDraw = 0;   // 重置反制监听窗口 + 闪避（对方半回合已过）（对手半回合计数）+ 本半回合主动抽牌数
+    p.cntTaken = 0; p.cntHits = 0; p.cntFoeCards = 0; p.dodge = 0; p.halfDraw = 0;
+    var _fz = !!p.frozen; p.frozen = false; p.skipPlay = _fz;   // 冰封：冻结值满 → 本半回合跳过出牌
+    if (_fz){ log(pname(who)+' 被冰封：本半回合不能出牌'); showFloat(who, '冰封！', 'fire'); }   // 重置反制监听窗口 + 闪避（对方半回合已过）（对手半回合计数）+ 本半回合主动抽牌数
     if (G.over) return;
     p.lifestealOn = !!p.passiveLifesteal; p.healPool = 0; p.rageOn = false;   // 嗜血：常驻 30%，累计清零、增伤标记重置
     if (p.passiveLifesteal && p.hp <= 10){ p.rageOn = true; p.dmgBuff = (p.dmgBuff || 0) + 1; showFloat(who, '嗜血增伤 +1', 'gain'); }
-    if (p.passiveHoly && p.limitActive!=='noshield'){ p.shield = Math.min(30, p.shield + 3); shieldFx(who,'gain'); showFloat(who, '+3盾', 'gain'); }   // 驰骋：每回合 +3 盾
+    if (p.passiveHoly && p.limitActive!=='noshield'){ p.shield = Math.min(30, p.shield + 2); shieldFx(who,'gain'); showFloat(who, '+2盾', 'gain'); }   // 驰骋：每回合 +2 盾
+    if (p.passiveScale && p.limitActive!=='noshield'){ p.shield = Math.min(30, p.shield + 1); shieldFx(who,'gain'); showFloat(who, '+1盾', 'gain'); }   // 鳞：每回合 +1 盾
     if (p.passiveGod){ p.dmgBuff = (p.dmgBuff||0) + 2; drawCards(who, 2); showFloat(who, '超模 +2', 'gain'); }   // 内测·超模
+    p.healBuff = 0;   // 治愈：新半回合清零
+    if (p.charId === 'ming' && p.passiveMing){ var _mx = p.mingPool || 0; p.mingPool = 0; var _mv = Math.max(0, _mx - 5); var _fmm = G.players[enemyOf(who)]; if (_mv > 0 && _fmm && !_fmm.dead){ showFloat(enemyOf(who), '明霞高灼 '+_mv, 'fire'); log(pname(who)+' 被动·明霞高灼：本大回合共受创 '+_mx+' → 对 '+pname(enemyOf(who))+' 造成 '+_mv+' 点伤害'); hitFrom(who, enemyOf(who), _mv, false); } }   // 明霞高灼
     if (p.nirvanaNext){ p.nirvana = true; p.nirvanaNext = false; showFloat(who, '寂灭', 'gain'); }   // 逝梦极意：下个半回合进入寂灭
     var base = p.baseAp || 3;
     var ap = Math.max(0, base - (p.apPenalty || 0)); p.apPenalty = 0;
@@ -1850,7 +2107,7 @@ var SPRITE_BAIZHUO = "sprites/baizhuo.png?h=a2ffd8ca";
       }
       p.halfDmg = 0;
       if (p.dawn) playXformOut(who);   // 退出破晓：平滑过渡
-      p.dmgBuff = 0; p.costCut = 0; p.nirvana = false; p.healCap = 0; p.healUsed = 0; p.dawn = false; p.limitActive = null;   // 增伤/减费/寂灭/禁疗/破晓/限制 只持续本半回合
+      p.dmgBuff = 0; p.costCut = 0; p.nirvana = false; p.healCap = 0; p.healUsed = 0; p.dawn = false; p.limitActive = null; p.skipPlay = false; p.noZero = false; p.healBlock = 0; p.healWatch = false; p.healWatchAcc = 0;   // 增伤/减费/寂灭/禁疗/破晓/限制 只持续本半回合
       if (p.weak > 0) p.weak -= 1; // 虚弱：在本方半回合结束时递减
       if (p.hand.length > 4){
         G.phase = 'discard';
@@ -1865,12 +2122,14 @@ var SPRITE_BAIZHUO = "sprites/baizhuo.png?h=a2ffd8ca";
   }
 
   function passTurn(from){
+    pasBlockOff(G.players[from]);            // 「封被」结束：恢复被动
     var to = enemyOf(from);
     if (to === 'me'){                 // 一个完整回合结束
       settleLifeLoss();               // 生命损失先结算
       if (G.over) return;
       G.round++;
       G.players.me.dmgTaken = 0; G.players.opp.dmgTaken = 0;
+      G.players.me.vuln = 0; G.players.opp.vuln = 0;   // 易伤：持续一个完整回合（双方半回合结束后消失）
       if (G.round > ROUND_CAP){ G.round = ROUND_CAP; judgeCap(); return; }   // 30 回合上限：比血量 → 造成伤害总量
     }
     endBtnDisable(false);
@@ -1913,6 +2172,18 @@ var SPRITE_BAIZHUO = "sprites/baizhuo.png?h=a2ffd8ca";
   }
 
   function resolvePoison(who, cb){            // 中毒：伤害=层数，被中毒方半回合结束时触发；触发后层数-5（不足5归零）
+    if (SIMULATING){
+      var _ps = G.players[who];
+      if (_ps.poison > 0 && !_ps.dead){
+        var _pd = _ps.poison;
+        if (_ps.dawn) _pd = Math.max(0, _pd - 1);
+        if (_ps.dodge > 0 && Math.random() < _ps.dodge) _pd = 0;
+        if (G.bstat) G.bstat[enemyOf(who)].poison += _pd;
+        _ps.poison = Math.floor(_ps.poison / 2);
+        takeHit(who, _pd, true, cb);
+      } else if (cb) cb();
+      return;
+    }
     var p = G.players[who];
     if (p.poison > 0 && !p.dead){
       var dmg = p.poison;
@@ -1929,6 +2200,16 @@ var SPRITE_BAIZHUO = "sprites/baizhuo.png?h=a2ffd8ca";
   }
   function resolveBurn(who, cb){ cb(); }   // 灼烧已改为「每使用一张牌触发一次」（见 burnTick）
   function burnTick(who){                  // 灼烧：对手每使用一张牌触发一次；伤害=层数，触发后层数减半（穿刺）
+    if (SIMULATING){
+      var _bs = G.players[who];
+      if (!_bs || _bs.dead || !(_bs.burn > 0)) return;
+      var _bd = _bs.burn; _bs.burn = Math.floor(_bs.burn / 2);
+      if (G.bstat) G.bstat[enemyOf(who)].burn += _bd;
+      if (_bs.dawn) _bd = Math.max(0, _bd - 1);
+      if (_bs.dodge > 0 && Math.random() < _bs.dodge) _bd = 0;
+      if (!G.over) takeHit(who, _bd, true);
+      return;
+    }
     var p = G.players[who];
     if (!p || p.dead || !(p.burn > 0)) return;
     var dmg = p.burn; p.burn = Math.floor(p.burn / 2);
@@ -1941,6 +2222,7 @@ var SPRITE_BAIZHUO = "sprites/baizhuo.png?h=a2ffd8ca";
 
   /* ================= 反制（舞者）= 盖牌 → 条件触发 → 自动回收 ================ */
   function showCounterFlip(d){
+    if (SIMULATING) return;
     var box = document.getElementById('cntBox'); if (!box) return;
     box.querySelector('.cnt-name').textContent = d.name;
     box.querySelector('.cnt-text').textContent = d.text;
@@ -2203,6 +2485,9 @@ var SPRITE_BAIZHUO = "sprites/baizhuo.png?h=a2ffd8ca";
     if (d.dawnExit)  s += p.dawn ? 16 : 2;                       // 拂晓叹辉：破晓中退出（治癒不再被减）才值
     if (d.lifestealNext) s += hasAffordableAttack(p, c.key, (p.ap || 0) - effCost(p, d)) ? 24 : -8;
     if (d.selfDmg)   s -= d.selfDmg * CVP.selfDmg;               // 自伤扣分
+    if (d.selfHits)  s -= (d.selfHits * (d.selfHitDmg||1)) * 2.2; // 流日云辉：自伤（可赚治愈/被动）
+    if (d.healBuff)  s += 16 * guard;                             // 星稀月雨：治愈 → 提升后续回血
+    if (d.selfVuln)  s -= 6 * d.selfVuln;                         // 舞火流风：易伤副作用
     if (d.poisonDiv) s += Math.min(6, ((f && f.poison) || 0) * 0.5);
     if (d.healPoison) s += Math.min(12, ((f && f.poison) || 0) * 0.8);
     if (d.nirvana)   s += 16;
@@ -2277,7 +2562,6 @@ var SPRITE_BAIZHUO = "sprites/baizhuo.png?h=a2ffd8ca";
       var dmg = seg.dmg + (st.buff || 0);
       if (st.p.passiveRanger){ if (st.charge){ pierce = true; st.charge = false; st.hitCount = 0; } else { st.hitCount = (st.hitCount||0) + 1; if (st.hitCount >= 2){ st.charge = true; st.hitCount = 0; } } }
       if ((st.p.weak||0) > 0 && !pierce) dmg -= 1;
-      if (st.p.limitActive === 'weakfield') dmg -= 1;
       if (st.p.limitActive === 'halfdmg') dmg = Math.floor(dmg/2);
       if (dmg < 0) dmg = 0;
       if (st.p.passiveDancer && !pierce && fs.shield > 0) dmg *= 2;
@@ -2377,7 +2661,71 @@ var SPRITE_BAIZHUO = "sprites/baizhuo.png?h=a2ffd8ca";
     return th;
   }
   // 干跑：把一张牌的效果算出来（fo=出牌方状态，mg=目标状态；含反制·亡魂/断肠、毒系真实数值、嗜血/驰骋/辉/焚砚/鸩毒）
+  /* ===== 第2步：真跑干跑（把 hApplyDry 的手写镜像换成引擎真实卡效） =====
+     只对「镜像没覆盖到的卡」（新角色/新机制）走真实执行；已调优角色的卡仍走原镜像 → 行为与平衡数据不变。 */
+  var HDRY_CHARS = ['ranger','trickster','swordsman','gambler','venom','paladin','dancer','radiant','reaper','baizhuo'];   // 手写镜像覆盖的角色；其余角色（明/莫/神…）自动走真跑
+  var HDRY_KEYS = null;
+  function hDryKeys(){
+    if (HDRY_KEYS) return HDRY_KEYS;
+    var set = {};
+    try {
+      for (var i=0;i<HDRY_CHARS.length;i++){
+        var ch = (typeof getChar === 'function') ? getChar(HDRY_CHARS[i]) : null;
+        var dk = ch && ch.deck;
+        if (dk) for (var j=0;j<dk.length;j++) set[dk[j]] = 1;
+      }
+    } catch(e){}
+    HDRY_KEYS = set; return set;
+  }
+  function hDryKnows(key){ return !!hDryKeys()[key]; }
+  function hDryMk(q, owner){
+    var p = {
+      hp:q.hp||0, max:q.max||30, shield:q.shield||0, ap:q.ap||0, baseAp:3, hand:[], field:[],
+      burn:q.burn||0, weak:q.weak||0, lifeLoss:q.lifeLoss||0, drawPenalty:q.drawPenalty||0, apPenalty:q.apPenalty||0,
+      dmgTaken:q.dmgTaken||0, poison:q.poison||0, passiveLifesteal:!!q.passiveLifesteal, lifestealOn:!!q.lifestealOn,
+      passiveGambler:!!q.passiveGambler, passivePoison:!!q.passivePoison, counters:[], cntTaken:0, cntHits:0, cntFoeCards:0,
+      dodge:q.dodge||0, dead:!!q.dead, limitPending:q.limitPending||null, limitActive:q.limitActive||null, limiter:null,
+      vuln:q.vuln||0, healBuff:q.healBuff||0, mingPool:q.mingPool||0, passiveMing:!!q.passiveMing, passiveScale:!!q.passiveScale, scaleReady:q.scaleReady||0, freeze:q.freeze||0, frozen:!!q.frozen, noZero:!!q.noZero, healBlock:q.healBlock||0, healWatch:!!q.healWatch, healWatchAcc:q.healWatchAcc||0, skipPlay:!!q.skipPlay,
+      charId:q.charId||null, dmgBuff:q.dmgBuff||0, costCut:q.costCut||0, dawn:!!q.dawn, nirvana:!!q.nirvana,
+      passiveRanger:!!q.passiveRanger, passiveDancer:!!q.passiveDancer, passiveTrickster:!!q.passiveTrickster,
+      passiveFenyan:!!q.passiveFenyan, passiveHoly:!!q.passiveHoly, passiveRadiant:!!q.passiveRadiant,
+      passiveSoulLoss:!!q.passiveSoulLoss, passiveSiphon:!!q.passiveSiphon, hitCount:q.hitCount||0, charge:!!q.charge,
+      holyN:q.holyN||0, radN:q.radN||0, dealt:q.dealt||0
+    };
+    p.counters = (q.counters||[]).slice();
+    p.deck = (q.deck||[]).map(function(c,i){ var k = (c && c.key) ? c.key : (typeof c === 'string' ? c : ''); return { uid:(c&&c.uid)||(k+'_d'+i), key:k, owner:owner }; });
+    return p;
+  }
+  var HDRY_CB = ['hp','max','shield','ap','burn','weak','lifeLoss','poison','dodge','vuln','healBuff','mingPool','passiveMing',
+    'dead','charId','dmgBuff','costCut','dawn','nirvana','hitCount','charge','holyN','radN','dealt','dmg','tkTaken','tkHits','cardsN',
+    'passiveLifesteal','passiveGambler','passivePoison','passiveFenyan','passiveHoly','passiveRadiant','passiveSoulLoss','passiveSiphon',
+    'passiveRanger','passiveDancer','passiveTrickster','cntTaken','cntHits','cntFoeCards','passiveScale','scaleReady','freeze','frozen','noZero','healBlock','healWatch','healWatchAcc','skipPlay'];
+  function hDryCopyBack(dst, src){
+    for (var i=0;i<HDRY_CB.length;i++){ var k = HDRY_CB[i]; if (typeof src[k] !== 'undefined') dst[k] = src[k]; }
+    if (src.hand) dst.hand = (dst.hand||[]).concat(src.hand);   // 抽到的新牌追加（本卡已由调用方移除）
+    if (src.deck) dst.deck = src.deck.slice();
+    if (src.counters) dst.counters = src.counters.slice();
+  }
+  // 真跑一步；返回 true=目标致死 / false=正常 / null=环境不支持（退回镜像）
+  function hApplyReal(key, fo, mg){
+    if (typeof DEFS === 'undefined' || !DEFS[key]) return null;
+    if (typeof playCard !== 'function' || typeof G === 'undefined') return null;
+    var bkG = G, bkSim = SIMULATING, lethal = null;
+    try {
+      var me = hDryMk(fo, 'me'), op = hDryMk(mg, 'opp');
+      me.hand = [ { uid:'dry_'+key, key:key, owner:'me' } ];
+      G = { players:{ me:me, opp:op }, turn:'me', phase:'play', round:(bkG && bkG.round)||1, over:false, swapMode:false, difficulty:'normal', endLock:false,
+            bstat:{ me:{dmg:0,burn:0,poison:0,lifeloss:0,taken:0,heal:0,shield:0,cards:0}, opp:{dmg:0,burn:0,poison:0,lifeloss:0,taken:0,heal:0,shield:0,cards:0} },
+            log:{ me:{dmg:0,cards:[]}, opp:{dmg:0,cards:[]} }, turnStat:null };
+      SIMULATING = true;
+      try { playCard('me', 0); lethal = !!G.players.opp.dead; } catch(e){ lethal = null; }
+      if (lethal !== null){ hDryCopyBack(fo, G.players.me); hDryCopyBack(mg, G.players.opp); }
+    } catch(e){ lethal = null; }
+    finally { SIMULATING = bkSim; G = bkG; }
+    return lethal;
+  }
   function hApplyDry(key, fo, mg){
+    if (typeof hDryKnows === 'function' && typeof hApplyReal === 'function' && !hDryKnows(key)){ var _r = hApplyReal(key, fo, mg); if (_r !== null) return _r; }
     var d = DEFS[key]; if (!d) return false;
     if (d.passive){
       if (key === 'pas_ranger') fo.passiveRanger = true;
@@ -2405,7 +2753,7 @@ var SPRITE_BAIZHUO = "sprites/baizhuo.png?h=a2ffd8ca";
       fo.dealt = (fo.dealt||0) + dd;                       // 嗜血/汲能：本半回合累计伤害
       fo.allDmg = (fo.allDmg||0) + dd;                     // 全盘进度：造成伤害累计（评估用）
       mg.tkTaken = (mg.tkTaken||0) + dd;                    // 反制：本半回合受伤累计
-      if (mg.passiveHoly){ mg.holyN = (mg.holyN||0) + 1; if (mg.holyN >= 4){ mg.holyN -= 4; mg.hp = Math.min(mg.max||30, mg.hp + 2); } }
+      if (mg.passiveHoly){ mg.holyN = (mg.holyN||0) + 1; if (mg.holyN >= 4){ mg.holyN -= 4; mg.hp = Math.min(mg.max||30, mg.hp + 1); } }
       if (mg.passiveRadiant){ mg.radN = (mg.radN||0) + 1; if (mg.radN >= 3){ mg.radN -= 3; mg.hp = Math.min(mg.max||30, mg.hp + 2); } }
       if (fo.passiveFenyan) mg.burn = (mg.burn||0) + 1;    // 焚砚(新)：攻击方 → 目标 +1
     }
@@ -2475,7 +2823,41 @@ var SPRITE_BAIZHUO = "sprites/baizhuo.png?h=a2ffd8ca";
       passiveRanger: !!q.passiveRanger, passiveDancer: !!q.passiveDancer, passiveLifesteal: !!q.passiveLifesteal, passiveGambler: !!q.passiveGambler,
       passiveFenyan: !!q.passiveFenyan, fenyanAcc: q.fenyanAcc||0, passivePoison: !!q.passivePoison, passiveHoly: !!q.passiveHoly, passiveRadiant: !!q.passiveRadiant, passiveTrickster: !!q.passiveTrickster,
       passiveSoulLoss: !!q.passiveSoulLoss, passiveSiphon: !!q.passiveSiphon,
-      hitCount: q.hitCount||0, charge: !!q.charge, dead: !!q.dead, charId: q.charId, counters: (q.counters||[]).slice(), deck: (q.deck||[]).slice(), dmg: 0, dealt: 0, holyN: q.holyN||0, radN: q.radN||0, tkTaken: 0, tkHits: 0, cardsN: 0 };
+      hitCount: q.hitCount||0, charge: !!q.charge, dead: !!q.dead, charId: q.charId, counters: (q.counters||[]).slice(), deck: (q.deck||[]).slice(), dmg: 0, dealt: 0, holyN: q.holyN||0, radN: q.radN||0, tkTaken: 0, tkHits: 0, cardsN: 0,
+      vuln: q.vuln||0, healBuff: q.healBuff||0, mingPool: q.mingPool||0, passiveMing: !!q.passiveMing };
+  }
+
+  /* ===== 真跑估值（第2步地基）：克隆整局 → 用引擎真实卡效执行 → 读盘面 delta =====
+     目的：让 AI 对「手写镜像 hApplyDry 覆盖不到」的新卡/新机制也能估值（新卡写进 EFFECTS 即自动可用）。
+     注意：hBoardScore/hRealDelta 未列入模拟器抽取名单 → 模拟器不受影响；调用处需 typeof 守卫。 */
+  function hBoardScore(seat){
+    var m = G.players[seat], o = G.players[seat === 'me' ? 'opp' : 'me'];
+    if (!m || !o) return 0;
+    var s = ((o.max||30) - o.hp) * 1.0 - ((m.max||30) - m.hp) * 1.0;
+    s += (m.shield||0) * 0.6 - (o.shield||0) * 0.6;
+    s += (o.burn||0)*1.5 + (o.poison||0)*1.5 + (o.vuln||0)*1.2 + (o.lifeLoss||0)*1.2;
+    s -= (m.burn||0)*1.5 + (m.poison||0)*1.5 + (m.vuln||0)*1.2 + (m.lifeLoss||0)*1.2;
+    if (o.dead) s += 1000;
+    if (m.dead) s -= 1000;
+    return s;
+  }
+  // 真跑一手牌，返回「盘面净变化」。仅当 p 是真实 G.players 且现在是它的出牌阶段才生效（避免在干跑克隆里递归）。
+  function hRealDelta(seat, c){
+    if (SIMULATING || !c) return null;
+    if (typeof G === 'undefined' || !G || G.over || G.phase !== 'play' || G.turn !== seat) return null;
+    var p = G.players[seat]; if (!p || !p.hand || p.hand.indexOf(c) < 0) return null;
+    var bkG = G, bkSim = SIMULATING, out = null;
+    try {
+      G = JSON.parse(JSON.stringify({ players:{ me:bkG.players.me, opp:bkG.players.opp }, bstat:bkG.bstat, log:bkG.log, turn:seat, phase:'play', round:bkG.round, over:false, turnStat:null }));
+      SIMULATING = true;
+      var before = hBoardScore(seat);
+      var idx = -1;
+      for (var i=0;i<G.players[seat].hand.length;i++){ if (G.players[seat].hand[i] && G.players[seat].hand[i].key === c.key){ idx = i; break; } }
+      if (idx >= 0) playCard(seat, idx);
+      out = hBoardScore(seat) - before;
+    } catch(e){ out = null; }
+    finally { SIMULATING = bkSim; G = bkG; }
+    return out;
   }
   // 困难：这张牌是不是「该留着的爆发件」（多段牌在手、增伤还不在手/在牌堆 → 先别拿来垫刀）
   function hHoldPiece(p, f, key){
@@ -2658,7 +3040,7 @@ var SPRITE_BAIZHUO = "sprites/baizhuo.png?h=a2ffd8ca";
           if (typeof G !== 'undefined' && G) G.difficulty = 'hard';
           me2.ap = 3; me2.dmgBuff = 0; me2.costCut = 0; me2.dawn = false; me2.nirvana = false; me2.dealt = 0; me2.cardsN = 0; if (me2.weak > 0) me2.weak--;
           if (me2.passiveLifesteal && me2.hp <= 10) me2.dmgBuff += 1;
-          if (me2.passiveHoly) me2.shield = Math.min(30, me2.shield + 3);
+          if (me2.passiveHoly) me2.shield = Math.min(30, me2.shield + 2);
           var g3 = 0;
           while (!me2.dead && !fo2.dead && g3++ < 12){
             var i4 = aiChoose(me2, fo2); if (i4 < 0) break;
@@ -2801,7 +3183,7 @@ var SPRITE_BAIZHUO = "sprites/baizhuo.png?h=a2ffd8ca";
       if (typeof G !== 'undefined' && G) G.difficulty = 'hard';
       me2.ap = 3; me2.dmgBuff = 0; me2.costCut = 0; me2.dawn = false; me2.nirvana = false; me2.dealt = 0; me2.cardsN = 0; if (me2.weak > 0) me2.weak--;
       if (me2.passiveLifesteal && me2.hp <= 10) me2.dmgBuff += 1;
-      if (me2.passiveHoly) me2.shield = Math.min(30, me2.shield + 3);
+      if (me2.passiveHoly) me2.shield = Math.min(30, me2.shield + 2);
       var g3 = 0;
       while (!me2.dead && !fo2.dead && g3++ < 12){
         var i4 = aiChoose(me2, fo2); if (i4 < 0) break;
@@ -2970,6 +3352,9 @@ var SPRITE_BAIZHUO = "sprites/baizhuo.png?h=a2ffd8ca";
     if (d.dmg)   s += effDamage(d, p, f) * dw;
     if (d.debuff === 'burn') s += 22;
     if (d.selfDmg) s -= d.selfDmg * 6;                                                 // 自伤扣分（别自残）
+    if (d.selfHits) s -= d.selfHits * (d.selfHitDmg||1) * 6;                            // 流日云辉：自伤
+    if (d.healBuff) s += 18;                                                            // 星稀月雨：治愈
+    if (d.selfVuln) s -= 8 * d.selfVuln;
     if (d.lifestealNext) s += (hasAffordableAttack(p, c.key, p.ap - (d.cost||0)) ? 26 : -6);   // 皓炎烬世：有后续攻击才值得铺
     if (d.pierceIfDebuff) s += 6;                                                // 白影灼空：条件穿刺
     if (d.disrupt) s += 15;
@@ -3102,8 +3487,9 @@ var SPRITE_BAIZHUO = "sprites/baizhuo.png?h=a2ffd8ca";
   function aiStep(depth){
     if (G.over || G.turn!=='opp' || G.phase!=='play') return;
     if (busy){ setTimeout(function(){ aiStep(depth); }, 200); return; }
+    if (G.players.opp.skipPlay){ setTimeout(function(){ if (!G.over && G.turn==='opp' && G.phase==='play') endTurnInternal('opp'); }, 600); return; }
     if (depth===0 && limReady(G.players.opp.limiter, G.round)){
-      if (G.difficulty !== 'hard' || hLimiterNow(G.players.opp, G.players.me)) activateLimiter('opp');
+      if (aiLimiterFire(G.players.opp, G.players.me, G.difficulty, chosenOpp, chosenMe)) activateLimiter('opp');
     }
     if (depth > 14){ endTurnInternal('opp'); return; }
     var idx = aiChoose(G.players.opp, G.players.me);
@@ -3130,6 +3516,7 @@ var SPRITE_BAIZHUO = "sprites/baizhuo.png?h=a2ffd8ca";
 
   /* ================= 死亡 ================= */
   function die(who){
+    if (SIMULATING){ if (G.players[who].dead) return; G.players[who].dead = true; G.over = true; G.phase = 'over'; finalizeBurst(); return; }
     if (G.players[who].dead) return;
     G.players[who].dead = true;
     G.over = true; G.phase = 'over';
@@ -3143,6 +3530,7 @@ var SPRITE_BAIZHUO = "sprites/baizhuo.png?h=a2ffd8ca";
     updateUI();
   }
   function showBanner(win){
+    if (SIMULATING) return;
     var b = document.getElementById('banner');
     var t = document.getElementById('bannerTitle');
     t.textContent = win ? '胜 利' : '失 败';
@@ -3155,7 +3543,7 @@ var SPRITE_BAIZHUO = "sprites/baizhuo.png?h=a2ffd8ca";
   /* ================= 界面渲染 ================= */
   function pname(who){ return who === 'me' ? '你' : '对手'; }
   function enemyOf(who){ return who === 'me' ? 'opp' : 'me'; }
-  function log(t){ document.getElementById('logline').textContent = t; }
+  function log(t){ if (SIMULATING) return; document.getElementById('logline').textContent = t; }
   function ownerNameOfCard(card, seatCharId){
     try{
       if (seatCharId) return getChar(seatCharId).name;
@@ -3168,7 +3556,7 @@ var SPRITE_BAIZHUO = "sprites/baizhuo.png?h=a2ffd8ca";
     o = o || {};
     var d = DEFS[key];
     var cost = (o.cost != null) ? o.cost : d.cost;
-    return '<div class="mini '+d.cls+' '+(o.extra||'')+'"'+(o.data||'')+'>'
+    return '<div class="mini '+d.cls+' '+(o.extra||'')+'" data-key="'+key+'"'+(o.data||'')+'>'
       + '<span class="cc'+(o.cut?' cut':'')+'">'+cost+'</span>'
       + '<div class="cn">'+d.name+'</div>'
       + '<div class="sep"></div>'
@@ -3178,6 +3566,7 @@ var SPRITE_BAIZHUO = "sprites/baizhuo.png?h=a2ffd8ca";
       + '</div>';
   }
   function showPlayed(key, ownerName){
+    if (SIMULATING) return;
     var d = DEFS[key]; if (!d) return;
     var box = document.getElementById('playedBox');
     box.innerHTML = d.counter
@@ -3233,17 +3622,28 @@ var SPRITE_BAIZHUO = "sprites/baizhuo.png?h=a2ffd8ca";
     // debuff 徽标
     var box = document.getElementById(pre+'Debuffs');
     box.innerHTML = '';
-    if (p.burn > 0) box.insertAdjacentHTML('beforeend', '<span class="debuff">灼烧 '+p.burn+'层</span>');
-    if (p.poison > 0) box.insertAdjacentHTML('beforeend', '<span class="debuff">中毒 · '+p.poison+'</span>');
-    if (p.weak > 0) box.insertAdjacentHTML('beforeend', '<span class="debuff">虚弱 · '+p.weak+'回合</span>');
-    if (p.lifestealOn) box.insertAdjacentHTML('beforeend', '<span class="debuff passive">吸血生效</span>');
-    if (p.lifeLoss > 0) box.insertAdjacentHTML('beforeend', '<span class="debuff">生命损失 · '+p.lifeLoss+'</span>');
-    if (p.nirvana) box.insertAdjacentHTML('beforeend', '<span class="debuff ghost">寂灭</span>');
-    if (p.healCap > 0) box.insertAdjacentHTML('beforeend', '<span class="debuff">禁疗 '+p.healCap+'</span>');
-    if ((p.dmgBuff || 0) > 0) box.insertAdjacentHTML('beforeend', '<span class="debuff passive">增伤 +'+p.dmgBuff+'</span>');
+    if (p.limitActive) box.insertAdjacentHTML('beforeend', limChip(p.limitActive, false));       // 限制器·生效中
+    else if (p.limitPending) box.insertAdjacentHTML('beforeend', limChip(p.limitPending, true));  // 限制器·下回合生效
+    var _dpt = function(id){ var t = TIP[id]; return t ? (' data-tip="'+t[0]+'|'+t[1]+'"') : ''; };
+    if (p.burn > 0) box.insertAdjacentHTML('beforeend', '<span class="debuff"'+_dpt('burn')+'>灼烧 '+p.burn+'层</span>');
+    if (p.poison > 0) box.insertAdjacentHTML('beforeend', '<span class="debuff"'+_dpt('poison')+'>中毒 · '+p.poison+'</span>');
+    if (p.weak > 0) box.insertAdjacentHTML('beforeend', '<span class="debuff"'+_dpt('weak')+'>虚弱 · '+p.weak+'回合</span>');
+    if (p.lifestealOn) box.insertAdjacentHTML('beforeend', '<span class="debuff passive"'+_dpt('lifesteal')+'>吸血生效</span>');
+    if (p.lifeLoss > 0) box.insertAdjacentHTML('beforeend', '<span class="debuff"'+_dpt('lifeLoss')+'>生命损失 · '+p.lifeLoss+'</span>');
+    if (p.nirvana) box.insertAdjacentHTML('beforeend', '<span class="debuff ghost"'+_dpt('nirvana')+'>寂灭</span>');
+    if (p.healCap > 0) box.insertAdjacentHTML('beforeend', '<span class="debuff"'+_dpt('healCap')+'>禁疗 '+p.healCap+'</span>');
+    if ((p.vuln||0) > 0) box.insertAdjacentHTML('beforeend', '<span class="debuff"'+_dpt('vuln')+'>易伤 +'+p.vuln+'</span>');
+    if ((p.healBuff||0) > 0) box.insertAdjacentHTML('beforeend', '<span class="debuff passive"'+_dpt('healBuff')+'>治愈 +'+p.healBuff+'</span>');
+    if ((p.dmgBuff || 0) > 0) box.insertAdjacentHTML('beforeend', '<span class="debuff passive"'+_dpt('buff')+'>增伤 +'+p.dmgBuff+'</span>');
+    if ((p.freeze||0) > 0) box.insertAdjacentHTML('beforeend', '<span class="debuff"'+_dpt('frozen')+'>冻结 '+p.freeze+'/3</span>');
+    if (p.frozen) box.insertAdjacentHTML('beforeend', '<span class="debuff"'+_dpt('frozen')+'>冰封</span>');
+    if (p.noZero) box.insertAdjacentHTML('beforeend', '<span class="debuff"'+_dpt('noZero')+'>禁 0 费</span>');
+    if ((p.healBlock||0) > 0) box.insertAdjacentHTML('beforeend', '<span class="debuff"'+_dpt('healBlock')+'>回血真空 '+p.healBlock+'</span>');
+    if ((p.scaleReady||0) > 0) box.insertAdjacentHTML('beforeend', '<span class="debuff passive"'+_dpt('scale')+'>鳞 ×'+p.scaleReady+'（×'+(1+p.scaleReady)+'）</span>');
+
     p.field.forEach(function(c){
       var d = DEFS[c.key];
-      box.insertAdjacentHTML('beforeend', '<span class="debuff passive">'+d.name+' '+d.text+'</span>');
+      box.insertAdjacentHTML('beforeend', '<span class="debuff passive" data-tip="'+d.name+'|'+d.text+'">'+d.name+' '+d.text+'</span>');
     });
     if (who === 'opp' && p.counters && p.counters.length) box.insertAdjacentHTML('beforeend', '<span class="debuff cnt">反制 ×'+p.counters.length+'</span>');
   }
@@ -3259,13 +3659,15 @@ var SPRITE_BAIZHUO = "sprites/baizhuo.png?h=a2ffd8ca";
   function addDebuffChip(){ /* 统一由 renderStatus 渲染 */ }
 
   function updateUI(){
+    if (SIMULATING) return;
     renderHands();
     renderStatus('me'); renderStatus('opp');
     renderMyCounters();
     if (G && G.players && G.players.me){ avatars.me.classList.toggle('dawn', !!G.players.me.dawn); avatars.opp.classList.toggle('dawn', !!G.players.opp.dawn); }   // 光辉：形态切换
     updateDawnBg();   // 破晓全屏渐变
-    document.getElementById('drawpile').innerHTML =
-      '<b>牌堆</b><span>你 '+G.players.me.deck.length+' · 敌 '+G.players.opp.deck.length+'</span>';
+    var _dpEl = document.getElementById('drawpile');
+    _dpEl.innerHTML = '<b class="cb-n">'+G.players.me.deck.length+'</b><span class="cb-t">卡 组</span>';
+    _dpEl.title = '你的牌堆 '+G.players.me.deck.length+' 张 · 对手 '+G.players.opp.deck.length+' 张（点开查看）';
     var tag = document.getElementById('roundtag');
     if (G.over){ tag.textContent = '对局结束 · 第 '+G.round+' 回合'; tag.className='roundtag'; }
     else {
@@ -3310,6 +3712,7 @@ var SPRITE_BAIZHUO = "sprites/baizhuo.png?h=a2ffd8ca";
     playCard(side, idx);
   }
   document.getElementById('myHand').addEventListener('click', function(e){
+    if (!_forcePlay) return;             // 普通点击不再出牌：出牌只能「向上拖过 46px 松手」；看效果=长按 1 秒
     if (TM && !TM.over){
       var el = e.target.closest('.mini'); if (!el) return;
       if (TM.phase === 'discard'){ tmDiscard(TM.discSi, parseInt(el.dataset.i, 10)); return; }
@@ -3433,10 +3836,10 @@ var SPRITE_BAIZHUO = "sprites/baizhuo.png?h=a2ffd8ca";
   var TM = null, chosenMode = 'single';
 
   /* ================= 闯关 / BOSS（2打1） ================= */
-  var SPRITE_LONGJI = "sprites/longji.png?h=d3238025";
+  var SPRITE_LONGJI = "sprites/longji.webp?h=b6867748";
 
-  var SPRITE_HOLY = "sprites/holy.png?h=1537e7c8";
-  var SPRITE_SNOW = "sprites/snow.png?h=e48e41f9";
+  var SPRITE_HOLY = "sprites/holy.webp?h=0c91a470";
+  var SPRITE_SNOW = "sprites/snow.webp?h=672ba68c";
 
   /* BOSS 注册表：每个 boss 就是一关，出招由 skills 数组驱动 */
   var BOSSES = {
@@ -3601,11 +4004,20 @@ var SPRITE_BAIZHUO = "sprites/baizhuo.png?h=a2ffd8ca";
   function tmAliveEnemies(si){ var me=TM.comb[si], out=[]; for (var i=0;i<TM.n;i++){ if (TM.comb[i].team!==me.team && !TM.comb[i].dead) out.push(i); } return out; }
   function tmHint(t){ var el=document.getElementById('tmHint'); if (el) el.textContent = t||''; }
   function tmRoll(c, n){ var f=[]; for (var i=0;i<n;i++) f.push(rollDie(c)); if (c.passiveGambler) luckDice(f); showDiceMulti(f); log(c.name+' 掷 '+n+' 颗骰子：'+f.join(' + ')); return f; }
-  function projSpeedChar(c, base){ return (c.body==='swordsman') ? Math.round(base*0.55) : base; }
+  function projSpeedChar(c, base){ return (c.body==='swordsman') ? Math.round(base*0.55) : (c.body==='dragon' ? Math.round(base*0.6) : base); }
   var ARC_CHARS = { venom:true };   // 走抛物线弹道的角色（蛊鸩师）
 
+  function assignAiLimiters(){                 // 组队/BOSS：给 AI 成员按「它的对手」挑限制器
+    if (!TM) return;
+    for (var i=1;i<TM.n;i++){
+      var c = TM.comb[i]; if (!c || c.isBoss) continue;
+      var en = tmAliveEnemies(i);
+      var foe = en.length ? TM.comb[en[0]] : TM.comb[0];
+      c.limiter = newLimiter(pickLimiterFor(c.charId, foe && (foe.charId || chosenOpp) || 'swordsman'));
+    }
+  }
   function tmStart(){
-    var ids = CHARACTERS.filter(function(c){ return !c.hidden; }).map(function(c){ return c.id; });
+    var ids = aiChars().map(function(c){ return c.id; });
     var used = [chosenMe];
     function pick(){ var av = ids.filter(function(id){ return used.indexOf(id) < 0; }); if (!av.length) av = ids.slice(); var v = av[Math.floor(Math.random()*av.length)]; used.push(v); return v; }
     var _allyKey;
@@ -3622,6 +4034,7 @@ var SPRITE_BAIZHUO = "sprites/baizhuo.png?h=a2ffd8ca";
     table.classList.add('team');
     document.getElementById('teamLayer').classList.add('on');
     tmBuild();
+    assignAiLimiters();
     log('组队模式：你 + 盟友  VS  两名敌手（交替行动 · 点敌人选目标）');
     showActionUI(true);
     tmStartTurn(0);
@@ -3633,10 +4046,10 @@ var SPRITE_BAIZHUO = "sprites/baizhuo.png?h=a2ffd8ca";
     c.skipLeft = 0; c.dmgRecv = 0; c.dmgReduce = 0; c.dmgReduceR = 0; c.dmgBuffR = 0;
     return c;
   }
-  function bossStartRun(){ var _pc = playableChars(); var _ak = (allyChosen && allyChosen !== chosenMe) ? allyChosen : (function(){ var av=_pc.filter(function(c){ return c.id!==chosenMe; }); return av[Math.floor(Math.random()*av.length)].id; })(); RUN = { stage: 0, blessings: [], allyBlessings: [], allyKey: _ak }; openBuffPick(0); }   // 队友整局固定（可自选，且不与玩家同角色）
+  function bossStartRun(){ var _pc = aiChars(); var _ak = (allyChosen && allyChosen !== chosenMe) ? allyChosen : (function(){ var av=_pc.filter(function(c){ return c.id!==chosenMe; }); return av[Math.floor(Math.random()*av.length)].id; })(); RUN = { stage: 0, blessings: [], allyBlessings: [], allyKey: _ak }; openBuffPick(0); }   // 队友整局固定（可自选，且不与玩家同角色）
   function tmStartBossStage(stage){
     var def = BOSSES[BOSS_ORDER[stage]];
-    var ids = CHARACTERS.filter(function(c){ return !c.hidden; }).map(function(c){ return c.id; });
+    var ids = aiChars().map(function(c){ return c.id; });
     var allyKey = (RUN && RUN.allyKey) || ids[Math.floor(Math.random()*ids.length)];   // 整局同一个队友
     if (allyKey === chosenMe){ var _av = ids.filter(function(id){ return id !== chosenMe; }); allyKey = _av[Math.floor(Math.random()*_av.length)]; }   // 不与玩家同角色
     TM = { comb: [ tmNewComb(chosenMe, 0, true, '你', 0),
@@ -3652,6 +4065,7 @@ var SPRITE_BAIZHUO = "sprites/baizhuo.png?h=a2ffd8ca";
     document.getElementById('teamLayer').classList.add('on');
     var s3 = document.getElementById('tms3'); if (s3){ s3.className='tm-slot'; s3.innerHTML=''; }
     tmBuild();
+    assignAiLimiters();
     log('第 '+(stage+1)+' 关：你 + 盟友  VS  '+def.name+'（'+def.hp+' 血）');
     showActionUI(true);
     tmStartTurn(0);
@@ -3663,11 +4077,11 @@ var SPRITE_BAIZHUO = "sprites/baizhuo.png?h=a2ffd8ca";
       el.innerHTML = '<div class="avatar tm-av"><div class="shieldring"></div><div class="figure"><div class="rig">'+bodyHTML(ch.body)+'</div></div>'
         + '<div class="flash"></div><div class="shieldfx"></div><div class="dmg"></div><div class="hitmark"><svg viewBox="0 0 100 100"><path d="M8,46 Q56,40 92,44 Q56,52 8,46 Z" fill="#fff3c2"/><path d="M76,6 Q52,52 22,94 Q44,48 76,6 Z" fill="#ffe9a8"/></svg></div></div>'
         + '<div class="status"><div class="namerow"><div class="pname"></div><span class="handcnt">手牌 <b>0</b></span></div><div class="hpbar"><i></i><span></span></div>'
-        + '<div class="chips"><span class="chip ap">行动力 <b>0</b></span><span class="chip sh">护盾 <b>0</b></span></div><div class="debuffs"></div><div class="blessline"></div>'
+        + '<div class="chips"><span class="chip ap" data-tip="行动力|每半回合的行动资源，打牌要消耗；半回合开始时回满（基础 3 点）">行动力 <b>0</b></span><span class="chip sh" data-tip="护盾|抵挡普通伤害；不能挡穿刺伤害，也不能挡生命损失。上限 30">护盾 <b>0</b></span></div><div class="debuffs"></div><div class="blessline"></div>'
         + (c.isBoss ? '<div class="bossnote">'+(c.def.note||'')+'</div>' : '') + '</div>';
       var av = el.querySelector('.avatar');
       av.style.setProperty('--main', ch.main); av.style.setProperty('--main-dark', ch.dark);
-      if (ch.body==='swordsman'||ch.body==='gambler'||ch.body==='longji'||ch.body==='snow'||ch.body==='holy'||ch.body==='giant'||ch.body==='ranger'||ch.body==='trickster'||ch.body==='venom'||ch.body==='dancer'||ch.body==='radiant'||ch.body==='reaper'||ch.body==='baizhuo') av.classList.add('imgchar');
+      if (ch.body==='swordsman'||ch.body==='gambler'||ch.body==='longji'||ch.body==='snow'||ch.body==='holy'||ch.body==='giant'||ch.body==='ranger'||ch.body==='trickster'||ch.body==='venom'||ch.body==='dancer'||ch.body==='radiant'||ch.body==='reaper'||ch.body==='baizhuo'||ch.body==='ming'||ch.body==='dragon') av.classList.add('imgchar');
       av.style.setProperty('--sy', ch.body === 'ranger' ? '12px' : '0px');
       el.querySelector('.pname').textContent = c.isBoss ? ('BOSS · ' + ch.name) : (c.name + ' · ' + ch.name);
       if (c.isBoss) el.querySelector('.handcnt').style.display = 'none';
@@ -3687,21 +4101,31 @@ var SPRITE_BAIZHUO = "sprites/baizhuo.png?h=a2ffd8ca";
       c.av.classList.toggle('has', c.shield>0);
       c.av.classList.toggle('dawn', !!c.dawn);   // 光辉：形态切换
       var db = el.querySelector('.debuffs'); db.innerHTML='';
-      if (c.burn>0) db.insertAdjacentHTML('beforeend','<span class="debuff">灼烧 '+c.burn+'</span>');
-      if (c.poison>0) db.insertAdjacentHTML('beforeend','<span class="debuff">中毒 '+c.poison+'</span>');
-      if (c.weak>0) db.insertAdjacentHTML('beforeend','<span class="debuff">虚弱 '+c.weak+'</span>');
-      if (c.nirvana) db.insertAdjacentHTML('beforeend','<span class="debuff ghost">寂灭</span>');
-      if (c.healCap>0) db.insertAdjacentHTML('beforeend','<span class="debuff">禁疗 '+c.healCap+'</span>');
-      if (c.freeze>0 && !c.isBoss) db.insertAdjacentHTML('beforeend','<span class="debuff">冻结 '+c.freeze+'/3</span>');
-      if (c.frozen) db.insertAdjacentHTML('beforeend','<span class="debuff">冰封</span>');
-      if (c.lifeLoss>0) db.insertAdjacentHTML('beforeend','<span class="debuff">生命损失 '+c.lifeLoss+'</span>');
-      if (c.dmgBuff>0 && !c.isBoss) db.insertAdjacentHTML('beforeend','<span class="debuff passive">增伤+'+c.dmgBuff+'</span>');
+      if (c.limitActive) db.insertAdjacentHTML('beforeend', limChip(c.limitActive, false));
+      else if (c.limitPending) db.insertAdjacentHTML('beforeend', limChip(c.limitPending, true));
+      var _dt2 = function(id){ var t = TIP[id]; return t ? (' data-tip="'+t[0]+'|'+t[1]+'"') : ''; };
+      if (c.burn>0) db.insertAdjacentHTML('beforeend','<span class="debuff"' + _dt2('burn') + '>灼烧 '+c.burn+'</span>');
+      if (c.poison>0) db.insertAdjacentHTML('beforeend','<span class="debuff"' + _dt2('poison') + '>中毒 '+c.poison+'</span>');
+      if (c.weak>0) db.insertAdjacentHTML('beforeend','<span class="debuff"' + _dt2('weak') + '>虚弱 '+c.weak+'</span>');
+      if (c.nirvana) db.insertAdjacentHTML('beforeend','<span class="debuff ghost"' + _dt2('nirvana') + '>寂灭</span>');
+      if (c.healCap>0) db.insertAdjacentHTML('beforeend','<span class="debuff"' + _dt2('healCap') + '>禁疗 '+c.healCap+'</span>');
+      if (c.freeze>0 && !c.isBoss) db.insertAdjacentHTML('beforeend','<span class="debuff"' + _dt2('frozen') + '>冻结 '+c.freeze+'/3</span>');
+      if (c.frozen) db.insertAdjacentHTML('beforeend','<span class="debuff"' + _dt2('frozen') + '>冰封</span>');
+      if (c.noZero) db.insertAdjacentHTML('beforeend','<span class="debuff"' + _dt2('noZero') + '>禁 0 费</span>');
+      if (c.healBlock>0) db.insertAdjacentHTML('beforeend','<span class="debuff"' + _dt2('healBlock') + '>回血真空 '+c.healBlock+'</span>');
+      if (c.scaleReady>0) db.insertAdjacentHTML('beforeend','<span class="debuff passive"' + _dt2('scale') + '>鳞 ×'+c.scaleReady+'（×'+(1+c.scaleReady)+'）</span>');
+
+      if (c.lifeLoss>0) db.insertAdjacentHTML('beforeend','<span class="debuff"' + _dt2('lifeLoss') + '>生命损失 '+c.lifeLoss+'</span>');
+      if (c.dmgBuff>0 && !c.isBoss) db.insertAdjacentHTML('beforeend','<span class="debuff passive"' + _dt2('buff') + '>增伤+'+c.dmgBuff+'</span>');
       if (c.passiveRanger) db.insertAdjacentHTML('beforeend','<span class="debuff passive">猎手</span>');
       if (c.passiveHoly) db.insertAdjacentHTML('beforeend','<span class="debuff passive">驰骋</span>');
       if (c.passiveRadiant) db.insertAdjacentHTML('beforeend','<span class="debuff passive">辉</span>');
       if (c.passiveLifesteal) db.insertAdjacentHTML('beforeend','<span class="debuff passive">嗜血</span>');
       if (c.passiveGambler) db.insertAdjacentHTML('beforeend','<span class="debuff passive">千术</span>');
       if (c.passiveTrickster) db.insertAdjacentHTML('beforeend','<span class="debuff passive">机敏</span>');
+      if ((c.vuln||0)>0) db.insertAdjacentHTML('beforeend','<span class="debuff">易伤 +'+c.vuln+'</span>');
+      if ((c.healBuff||0)>0) db.insertAdjacentHTML('beforeend','<span class="debuff passive">治愈 +'+c.healBuff+'</span>');
+      if (c.passiveMing) db.insertAdjacentHTML('beforeend','<span class="debuff passive">明霞高灼</span>');
       if (c.isBoss){
         if (c.def.rage) db.insertAdjacentHTML('beforeend','<span class="debuff passive giantrage'+(c.hp<=c.max/2?' on':'')+'" title="被动·狂暴：血量低于一半后，所有技能伤害 +3">狂暴'+(c.hp<=c.max/2?' +3':'')+'</span>');
         if (c.def.plague) db.insertAdjacentHTML('beforeend','<span class="debuff passive plague'+(c.hp<=c.max*0.3?' on':'')+'" title="被动·瘴噬：血量 ≤30% 时，每次附加中毒有 40% 概率回复等额血量">瘴噬'+(c.hp<=c.max*0.3?' 触发中':'')+'</span>');
@@ -3724,7 +4148,9 @@ var SPRITE_BAIZHUO = "sprites/baizhuo.png?h=a2ffd8ca";
     document.getElementById('roundtag').textContent = TM.over ? '对局结束' : ((TM.bossMode ? ('第 '+(TM.stage+1)+' / '+BOSS_ORDER.length+' 关 · ') : '') + '第 '+TM.round+' 回合 · ' + (cur.isBoss ? (cur.def.name+'的回合') : cur.name+'的半回合'));
     var dp = '';
     for (var q=0;q<TM.n;q++){ var cc=TM.comb[q]; if (cc.isBoss) continue; dp += (dp? ' · ':'') + cc.name+' '+cc.deck.length; }
-    document.getElementById('drawpile').innerHTML = '<b>牌堆</b><span>'+dp+'</span>';
+    var _dpEl2 = document.getElementById('drawpile');
+    _dpEl2.innerHTML = '<b class="cb-n">'+TM.comb[0].deck.length+'</b><span class="cb-t">卡 组</span>';
+    _dpEl2.title = dp + '（点开查看）';
     var eb = document.getElementById('endBtn'); if (eb) eb.disabled = TM.over || TM.phase==='discard' || TM.order[TM.ti]!==0 || TM.targeting>=0;
     var lb2 = document.getElementById('limBtn'); if (lb2){ var lmc = TM.comb[0] && TM.comb[0].limiter; var can2 = !!lmc && lmc.uses>0 && TM.round>=lmc.readyAt && !TM.over && TM.phase!=='discard' && TM.order[TM.ti]===0;
       lb2.disabled = !can2; lb2.textContent = '限 制 器 · ' + (lmc?limName(lmc.id):'') + ' 剩' + ((lmc&&lmc.uses)||0); }
@@ -3749,7 +4175,7 @@ var SPRITE_BAIZHUO = "sprites/baizhuo.png?h=a2ffd8ca";
   function tmShake(c, kind){ if (kind==='attack'){ var f=c.av; f.classList.remove('attack'); void f.offsetWidth; f.classList.add('attack'); setTimeout(function(){ f.classList.remove('attack'); },520); return; } c.av.classList.remove('hit'); void c.av.offsetWidth; c.av.classList.add('hit'); setTimeout(function(){ c.av.classList.remove('hit'); },520); var fl=c.av.querySelector('.flash'); if (fl){ fl.className='flash'+(kind?' '+kind:''); void fl.offsetWidth; fl.classList.add('on'); } }
   function tmShieldFx(c, mode){ var el=c.av.querySelector('.shieldfx'); if(!el) return; el.classList.remove('on','absorb'); void el.offsetWidth; el.classList.add('on'); if(mode==='absorb') el.classList.add('absorb'); setTimeout(function(){ el.classList.remove('on','absorb'); },900); }
   function tmFall(c){ c.av.classList.remove('hit','attack','kneel','fall','grayed'); c.av.classList.add('dead','dissolve'); var fl=c.av.querySelector('.flash'); if (fl){ fl.className='flash unmake'; void fl.offsetWidth; fl.classList.add('on'); } }
-  function tmHeal(c, n){ if (c.limitActive==='noheal' && n > 0){ tmFloat(c,'禁 疗','block'); return; } if (c.dawn && n > 0) n = Math.max(0, n - 2); if (c.healCap > 0){ var _al = Math.max(0, c.healCap - (c.healUsed||0)); if (n > _al) n = _al; c.healUsed = (c.healUsed||0) + n; } if (n > 0 && TM){ var _hi = TM.comb.indexOf(c); if (_hi >= 0){ var _hen = tmAliveEnemies(_hi); for (var _hq=0; _hq<_hen.length; _hq++) tmCntEventCheck(_hen[_hq], 'foeHeal', n); } } var _thp=c.hp; c.hp = Math.min(c.max, c.hp+n); if (TM && TM.bstat){ var _ti2=TM.comb.indexOf(c); if(_ti2>=0) TM.bstat[_ti2].heal += (c.hp-_thp); } tmFloat(c, '+'+n, 'gain'); }
+  function tmHeal(c, n){ if (!c || c.dead) return; if (c.limitActive==='noheal' && n > 0){ tmFloat(c,'禁 疗','block'); return; } if (c.healBuff && n > 0) n += c.healBuff; if (c.dawn && n > 0) n = Math.max(0, n - 2); if (c.healBlock > 0 && n > 0){ var _hb=Math.min(c.healBlock,n); c.healBlock-=_hb; n-=_hb; if(_hb>0){ tmFloat(c,'回血失效 '+_hb,'block'); log(c.name+' 有 '+_hb+' 点回血失效（龙烬炎息）'); } } if (c.healCap > 0){ var _al = Math.max(0, c.healCap - (c.healUsed||0)); if (n > _al) n = _al; c.healUsed = (c.healUsed||0) + n; } if (n > 0 && TM){ var _hi = TM.comb.indexOf(c); if (_hi >= 0){ var _hen = tmAliveEnemies(_hi); for (var _hq=0; _hq<_hen.length; _hq++) tmCntEventCheck(_hen[_hq], 'foeHeal', n); } } var _thp=c.hp; c.hp = Math.min(c.max, c.hp+n); if (c.healWatch && (c.hp-_thp) > 0){ c.healWatchAcc = (c.healWatchAcc||0) + (c.hp-_thp); while (c.healWatchAcc >= 3){ c.healWatchAcc -= 3; var _wi=TM.comb.indexOf(c), _wen=tmAliveEnemies(_wi); for (var _wj=0; _wj<_wen.length; _wj++){ tmDraw(TM.comb[_wen[_wj]], 1); tmFloat(TM.comb[_wen[_wj]], '龙语', 'gain'); log(TM.comb[_wen[_wj]].name+' 残灭龙语：对方回血满 3 → 抽 1 张'); } } } if (TM && TM.bstat){ var _ti2=TM.comb.indexOf(c); if(_ti2>=0) TM.bstat[_ti2].heal += (c.hp-_thp); } tmFloat(c, '+'+n, 'gain'); }
   function tmDraw(c, n, manual){
     if (c.limitActive==='nodraw' && n > 0){ tmFloat(c,'禁 抽','block'); return; }
     var got = 0;
@@ -3761,12 +4187,13 @@ var SPRITE_BAIZHUO = "sprites/baizhuo.png?h=a2ffd8ca";
   }
   function tmHit(fi, ti, base, pierce){
     var from = TM.comb[fi], to = TM.comb[ti];
-    if (TM.over || to.dead) return 0;
+    if (!from || !to || TM.over || to.dead) return 0;   // 判空：过期动画回调不再打到新局
+
     if (from.passiveLifesteal && from.hp <= 10 && !from.rageOn){ from.rageOn = true; from.dmgBuff = (from.dmgBuff||0) + 1; tmFloat(from,'嗜血增伤 +1','gain'); }   // 立即检测
     var dmg = base + (from.dmgBuff||0) + (from.blessDmg||0);
+    if (to.vuln) dmg += to.vuln;                     // 易伤：每层每次受伤 +1
     if (from.passiveRanger){ if (from.charge){ pierce=true; from.charge=false; from.hitCount=0; } else { from.hitCount++; if (from.hitCount>=2){ from.charge=true; from.hitCount=0; } } }
     if (from.weak>0 && !pierce) dmg -= 1;
-    if (from.limitActive==='weakfield') dmg -= 1;   // 限制器·虚弱场
     if (from.limitActive==='halfdmg') dmg = Math.floor(dmg/2);   // 限制器·伤害减半
     if (to.dmgReduce>0) dmg -= to.dmgReduce;      // 减伤：每层 -1（含穿刺）
     if (to.blessReduce>0) dmg -= to.blessReduce;  // 祝福减伤
@@ -3777,13 +4204,14 @@ var SPRITE_BAIZHUO = "sprites/baizhuo.png?h=a2ffd8ca";
     var blocked=0;
     if (!pierce && to.shield>0){ blocked=Math.min(to.shield,dmg); to.shield-=blocked; dmg-=blocked; }
     var before=to.hp; to.hp=Math.max(0,to.hp-dmg); var lost=before-to.hp; to.dmgTaken+=lost; if (to.isBoss) to.dmgRecv=(to.dmgRecv||0)+lost;
+    if (to.charId === 'ming' && to.passiveMing) to.mingPool = (to.mingPool||0) + lost;   // 明霞高灼：本大回合内受创累计（含自身半回合/自伤/DoT）
     if (TM.bstat){ TM.bstat[fi].dmg += lost; TM.bstat[ti].taken += lost; }
     if (blocked>0){ tmShieldFx(to,'absorb'); tmFloat(to,'格挡 '+blocked,'block'); }
     if (lost>0){ tmFloat(to, '-'+lost, pierce?'pierce':''); }
     if (blocked>0 || lost>0) tmShake(to, pierce?'tear':(blocked>0&&lost===0?'blk':''));
     if (from.passiveSiphon && to.team!==from.team && lost>0 && TM.comb[TM.order[TM.ti]]===from) from.halfDmg = (from.halfDmg||0) + lost;   // 汲能：累计
     if (to.passiveTrickster && lost > 0){ to.dn = (to.dn||0) + 1; if (to.dn >= 3){ to.dn -= 3; tmDraw(to, 1); log(to.name+' 机敏：受击 3 次 → 抽 1 张牌'); } }   // 机敏
-    if (to.passiveHoly && lost > 0){ to.holyN = (to.holyN||0) + 1; if (to.holyN >= 4){ to.holyN -= 4; tmHeal(to, 2); log(to.name+' 驰骋：受击 4 次 → 回复 2 血'); } }   // 驰骋
+    if (to.passiveHoly && lost > 0){ to.holyN = (to.holyN||0) + 1; if (to.holyN >= 4){ to.holyN -= 4; tmHeal(to, 1); log(to.name+' 驰骋：受击 4 次 → 回复 1 血'); } }   // 驰骋
     if (to.passiveRadiant && lost > 0){ to.radN = (to.radN||0) + 1; if (to.radN >= 3){ to.radN -= 3; tmHeal(to, 2); log(to.name+' 辉：受击 3 次 → 回复 2 血'); } }   // 辉
     if (from.passiveFenyan && lost > 0){ to.burn = (to.burn||0) + 1; tmFloat(to, '焚砚 +1灼', 'fire'); }
     if (to.counters && to.counters.length && lost > 0){ to.cntTaken += lost; to.cntHits++; tmCntCheck(ti); }   // 反制：记录受伤（实际掉血）
@@ -3813,13 +4241,15 @@ var SPRITE_BAIZHUO = "sprites/baizhuo.png?h=a2ffd8ca";
   function tmAttackSeq(fi, ti, hits, cb){
     var from=TM.comb[fi], to=TM.comb[ti];
     if (!to || to.dead || !hits.length){ if (cb) cb(); return; }
+    var _TM = TM;                             // 本局标记：过期动画链自动作废
     setProjectileChar(tmCharOf(from), !!from.dawn);   // 沿用 1v1 各职业的攻击弹道（箭/剑气/扑克/法球）
     tmShake(from,'attack');
     var n=hits.length, done=0, multi=n>1, stopped=false;
     for (var i=0;i<n;i++){ (function(i){
       setTimeout(function(){
-        if (stopped || TM.over) return;
+        if (_TM !== TM || stopped || TM.over) return;
         (ARC_CHARS[from.body] ? function(f){ tmFireArc(from.av, to.av, projSpeedChar(from, multi?220:400), true, f); } : function(f){ tmFire(from.av, to.av, projSpeedChar(from, multi?220:400), f); })(function(){
+          if (_TM !== TM) return;
           if (from.body==='radiant' && from.dawn) showHitmarkEl(to.av);
           tmHit(fi, ti, hits[i].dmg, !!hits[i].pierce); done++;
           if (TM.over){ if (!stopped){ stopped=true; if (cb) cb(); } return; }
@@ -3895,6 +4325,9 @@ var SPRITE_BAIZHUO = "sprites/baizhuo.png?h=a2ffd8ca";
     var c = me.hand[idx]; if (!c) return;
     var d = DEFS[c.key];
     if (!d){ log('未知的牌：'+c.key); return; }   // 防御
+    if (d.passive && me.limitActive === 'nopassive'){ log(me.name+' 被「封被」：本半回合被动牌无法生效，先留着'); tmFloat(me,'封 被','fire'); return; }
+    if (me.skipPlay){ log(me.name+' 被冰封：本半回合不能出牌'); tmFloat(me,'冰 封','fire'); return; }
+    if (me.noZero && (d.cost||0) === 0){ log(me.name+' 被封锁：不能用原费 0 的牌'); tmFloat(me,'禁 0 费','fire'); return; }
     var pay = effCost(me, d); if (pay > me.ap) return;
     me.ap -= pay; if (me.costCut) me.costCut = 0;   // 用掉「下一张牌 -1」
     if (TM.bstat) TM.bstat[si].cards++;
@@ -3915,6 +4348,8 @@ var SPRITE_BAIZHUO = "sprites/baizhuo.png?h=a2ffd8ca";
       if (c.key==='pas_radiant') me.passiveRadiant=true;      // 辉：受击 3 次回 2 血
       if (c.key==='pas_reaper') me.passiveSoulLoss=true;      // 魂损：生命损失保留一半
       if (c.key==='pas_fenyan') me.passiveFenyan=true;       // 焚砚：剩余行动力 → 灼烧
+      if (c.key==='pas_ming') me.passiveMing=true;
+      if (c.key==='pas_scale') me.passiveScale=true;          // 鳞：自伤蓄力 → 下一次攻击翻倍          // 明霞高灼：对手半回合受创累计
       log(me.name+' 被动生效：'+d.name); tmRender(); if (cb) cb(); return; }
     if (d.counter){ me.counters.push(c); log(me.name+' 盖下一张反制牌「'+d.name+'」'); tmRender(); if (cb) cb(); return; }   // 反制：盖牌放场上
     tmOwnerPush(c, si);
@@ -3957,7 +4392,10 @@ var SPRITE_BAIZHUO = "sprites/baizhuo.png?h=a2ffd8ca";
     var me = TM.comb[si]; if (me.dead){ tmEndTurn(si); return; }
     var _enq = tmAliveEnemies(si);
     var _fq = (_enq && _enq.length) ? TM.comb[_enq[0]] : null;
-    if (limReady(me.limiter, TM.round)){ if ((typeof G === 'undefined' || !G || G.difficulty !== 'hard') || hLimiterNow(me, _fq)) tmActivateLimiter(si); }
+    if (limReady(me.limiter, TM.round)){
+      var _diff = (typeof G !== 'undefined' && G && G.difficulty) || 'normal';
+      if (aiLimiterFire(me, _fq, _diff, me.charId, _fq && _fq.charId)) tmActivateLimiter(si);
+    }
     var ch = tmAIChoose(me, si);
     if (!ch){ setTimeout(function(){ if (TM && !TM.over && TM.order[TM.ti]===si) tmEndTurn(si); }, 500); return; }
     tmPlayCard(si, ch.idx, ch.target, function(){ setTimeout(tmAiTurn, 620); });
@@ -4220,7 +4658,7 @@ var SPRITE_BAIZHUO = "sprites/baizhuo.png?h=a2ffd8ca";
   function tmStartTurn(i){
     if (!TM || TM.over) return;
     var c = TM.comb[i];
-    if (!c.isBoss){ if (c.limitPending){ c.limitActive = c.limitPending; c.limitPending = null; log(c.name+' 本半回合受限制器「'+limName(c.limitActive)+'」影响'); } else { c.limitActive = null; } }
+    if (!c.isBoss){ pasBlockOff(c); if (c.limitPending){ c.limitActive = c.limitPending; c.limitPending = null; log(c.name+' 本半回合受限制器「'+limName(c.limitActive)+'」影响'); } else { c.limitActive = null; } pasBlockOn(c); }
     if (c.isBoss){
       c.ap = 0;
       tmHint(c.def.name+'的回合……');
@@ -4239,8 +4677,11 @@ var SPRITE_BAIZHUO = "sprites/baizhuo.png?h=a2ffd8ca";
     if (c.limitActive==='apdrain'){ c.ap = Math.max(0, c.ap-2); tmFloat(c,'枯竭 -2','fire'); log(c.name+' 被「枯竭」：行动力 -2'); }
     c.lifestealOn = !!(c.passiveLifesteal || c.blessSteal); c.healPool = 0; c.rageOn = false;   // 吸血（嗜血/祝福）：累计清零
     if (c.passiveLifesteal && c.hp <= 10){ c.rageOn = true; c.dmgBuff = (c.dmgBuff||0) + 1; tmFloat(c,'嗜血增伤 +1','gain'); }
-    if (c.passiveHoly && c.limitActive!=='noshield'){ c.shield = Math.min(30, c.shield + 3); tmShieldFx(c,'gain'); tmFloat(c,'+3盾','gain'); }   // 驰骋：每回合 +3 盾
+    if (c.passiveHoly && c.limitActive!=='noshield'){ c.shield = Math.min(30, c.shield + 2); tmShieldFx(c,'gain'); tmFloat(c,'+2盾','gain'); }   // 驰骋：每回合 +2 盾
+    if (c.passiveScale && c.limitActive!=='noshield'){ c.shield = Math.min(30, c.shield + 1); tmShieldFx(c,'gain'); tmFloat(c,'+1盾','gain'); }   // 鳞：每回合 +1 盾
     if (c.passiveGod){ c.dmgBuff = (c.dmgBuff||0) + 2; tmDraw(c, 2); tmFloat(c,'超模 +2','gain'); }   // 内测·超模
+    c.healBuff = 0;   // 治愈清零
+    if (c.charId === 'ming' && c.passiveMing){ var _mx = c.mingPool||0; c.mingPool = 0; var _mv = Math.max(0, _mx-5); var _enM = tmAliveEnemies(i); if (_mv>0 && _enM.length){ var _foM = TM.comb[_enM[0]]; tmFloat(_foM,'明霞高灼 '+_mv,'fire'); log(c.name+' 被动·明霞高灼：本大回合受创 '+_mx+' → 对 '+_foM.name+' 造成 '+_mv+' 点伤害'); tmHit(i, _enM[0], _mv, false); } }   // 明霞高灼
     if (c.nirvanaNext){ c.nirvana = true; c.nirvanaNext = false; tmFloat(c,'寂灭','gain'); }   // 逝梦极意
     if (c.blessShield || c.blessHeal || c.blessBurn){        // 祝福：每回合开始效果（仅玩家）
       if (c.blessShield && c.limitActive!=='noshield'){ c.shield = Math.min(30, c.shield + c.blessShield); tmShieldFx(c,'gain'); tmFloat(c,'+'+c.blessShield+'盾','gain'); }   // 与卡牌一致：护盾上限 30
@@ -4276,7 +4717,8 @@ var SPRITE_BAIZHUO = "sprites/baizhuo.png?h=a2ffd8ca";
     }
     c.halfDmg = 0;
     if (c.dawn && c.av) playXformOutEl(c.av);   // 退出破晓：平滑过渡
-    if (!c.isBoss) c.dmgBuff = 0; c.costCut = 0; c.skipPlay = false; c.nirvana = false; c.healCap = 0; c.healUsed = 0; c.dawn = false; c.limitActive = null; if (c.weak>0) c.weak--;
+    pasBlockOff(c);                          // 「封被」结束：恢复被动
+    if (!c.isBoss) c.dmgBuff = 0; c.costCut = 0; c.skipPlay = false; c.nirvana = false; c.healCap = 0; c.healUsed = 0; c.dawn = false; c.limitActive = null; c.noZero = false; c.healBlock = 0; c.healWatch = false; c.healWatchAcc = 0; if (c.weak>0) c.weak--;
     tmCheckWin(); tmRender();
     if (TM.over) return;
     if (c.hand.length > 4){
@@ -4310,6 +4752,7 @@ var SPRITE_BAIZHUO = "sprites/baizhuo.png?h=a2ffd8ca";
   }
   function tmRoundEnd(){
     TM.round++;
+    for (var _vi=0;_vi<TM.n;_vi++) TM.comb[_vi].vuln = 0;   // 易伤：持续一个完整回合（所有半回合结束后消失）
     for (var i=0;i<TM.n;i++){ var c=TM.comb[i];
       if (c.isBoss){                                  // BOSS 增伤/减伤 按大回合递减
         if (c.dmgBuffR>0){ c.dmgBuffR--; if (c.dmgBuffR===0) c.dmgBuff=0; }
@@ -4376,7 +4819,7 @@ var SPRITE_BAIZHUO = "sprites/baizhuo.png?h=a2ffd8ca";
     var d = document.getElementById('limDesc'); if (!d) return;
     var L = getLimiter(chosenLimiter) || LIMITERS[0];
     d.innerHTML = '你现在带的限制器：<b>'+L.name+'</b> —— '+L.text+
-      '<br>用法：开局选 1 个 · 局内点「限制器」发动 · 可用 <b>2 次</b> · 冷却 <b>1 回合</b> · <b>免费</b> · 作用于<b>对手的下半回合</b>';
+      '<br>用法：开局选 1 个 · 局内点「限制器」发动 · 可用 <b>'+limUses(chosenLimiter)+' 次</b> · 冷却 <b>1 回合</b> · <b>免费</b> · 作用于<b>对手的下半回合</b>';
   }
   (function(){ var r=document.getElementById('limRow'); if (r) r.addEventListener('click', function(e){ var el=e.target.closest('.diffbtn'); if(!el||!el.dataset.lim) return; chosenLimiter=el.dataset.lim; renderLims(); }); })();
   document.getElementById('charSearch').addEventListener('input', function(){ renderSelect(this.value); });
@@ -4411,28 +4854,89 @@ var SPRITE_BAIZHUO = "sprites/baizhuo.png?h=a2ffd8ca";
   function miniCard(it){
     return miniHTML(it.key, {cnt: it.n, owner: it.own});
   }
-  function renderPile(){
-    var me = G.players.me, op = G.players.opp;
+  /* ---- 卡组弹层：我的 / 对手（看清对面有什么，新玩家友好） ---- */
+  var pileTab = 'me', pileCheat = false;
+  function pileTabsHTML(){
+    var foeLabel = TM ? '其他人' : '对手';
+    return '<div class="pmtabs">'
+      + '<button data-pile-tab="me" class="'+(pileTab==='me'?'on':'')+'">我的</button>'
+      + '<button data-pile-tab="foe" class="'+(pileTab==='foe'?'on':'')+'">'+foeLabel+'</button></div>';
+  }
+  function skillMini(sk){
+    return '<div class="mini '+(sk.cls||'c-atk')+'"><span class="cc">'+(sk.face||'·')+'</span>'
+      + '<div class="cn">'+(sk.name||'')+'</div><div class="sep"></div><div class="ce">'+(sk.text||'')+'</div></div>';
+  }
+  function deckGridOf(deckKeys){
+    return groupCards((deckKeys||[]).map(function(k){ return { key:k }; })).map(miniCard).join('') || '<span style="color:#8ea2b4">（空）</span>';
+  }
+  function safeChar(id){ try { return getChar(id) || { name:(id||'？'), deck:[] }; } catch(e){ return { name:(id||'？'), deck:[] }; } }
+  function foeBlock1v1(){
+    var op = G.players.opp, ch = safeChar(chosenOpp);
+    var h = '<div class="dstitle">对手：'+ch.name+' · 手牌 '+op.hand.length+' 张 · 牌堆 '+op.deck.length+' 张'
+      + ((op.counters && op.counters.length) ? (' · 反制 ×'+op.counters.length) : '') + '</div>';
+    h += '<div class="dstitle">对手职业全卡（共 '+ch.deck.length+' 张）</div><div class="dm-grid">'+deckGridOf(ch.deck)+'</div>';
+    if (op.field && op.field.length) h += '<div class="dstitle">对手场上（可见）</div><div class="dm-grid">'+ op.field.map(function(c){ return miniHTML(c.key, {owner: ownerNameOfCard(c)}); }).join('') +'</div>';
+    h += '<div class="dstitle"><button class="minibtn" id="pileCheat">'+(pileCheat ? '隐藏对手剩余牌堆' : '查看对手剩余牌堆（作弊）')+'</button></div>';
+    if (pileCheat) h += '<div class="dm-grid">'+ (groupCards(op.deck).map(miniCard).join('') || '<span style="color:#8ea2b4">（空）</span>') +'</div>';
+    return h;
+  }
+  function foeBlockTeam(){
     var h = '';
-    var deck = groupCards(me.deck), hand = groupCards(me.hand);
-    h += '<div class="dstitle">你的牌堆（未抽 '+me.deck.length+' 张）</div><div class="dm-grid">'+ (deck.length? deck.map(miniCard).join('') : '<span style="color:#8ea2b4">（空）</span>') +'</div>';
-    h += '<div class="dstitle">你的手牌（'+me.hand.length+' 张）</div><div class="dm-grid">'+ (hand.length? hand.map(miniCard).join('') : '<span style="color:#8ea2b4">（空）</span>') +'</div>';
-    if (me.field.length) h += '<div class="dstitle">场上（被动）</div><div class="dm-grid">'+ me.field.map(function(c){ var d=DEFS[c.key]; return miniHTML(c.key, {owner: ownerNameOfCard(c)}); }).join('') +'</div>';
-    if (me.counters.length) h += '<div class="dstitle">场上（反制 · 盖牌）</div><div class="dm-grid">'+ me.counters.map(function(c){ return miniHTML(c.key, {owner: ownerNameOfCard(c)}); }).join('') +'</div>';
-    h += '<div class="dstitle">对手：手牌 '+op.hand.length+' 张 · 牌堆 '+op.deck.length+' 张</div>';
+    for (var i=1;i<TM.n;i++){
+      var c = TM.comb[i]; if (!c) continue;
+      if (c.isBoss){
+        h += '<div class="dstitle">'+c.name+'（BOSS） · 血量 '+c.hp+'/'+c.max+'</div>';
+        h += '<div class="dstitle">BOSS 技能（'+ ((c.def.skills||[]).length) +' 招循环）</div><div class="dm-grid">'+ (c.def.skills||[]).map(skillMini).join('') +'</div>';
+        if (c.def.note) h += '<div class="blessline" data-tip="'+c.def.note.replace(/"/g,'')+'">'+c.def.note+'</div>';
+        continue;
+      }
+      var ch = tmCharOf(c);
+      h += '<div class="dstitle">'+c.name+' · '+ch.name+' · 手牌 '+c.hand.length+' 张 · 牌堆 '+c.deck.length+' 张'
+        + ((c.counters && c.counters.length) ? (' · 反制 ×'+c.counters.length) : '') + '</div>';
+      h += '<div class="dm-grid">'+deckGridOf(ch.deck)+'</div>';
+      if (c.field && c.field.length) h += '<div class="dstitle">场上（可见）</div><div class="dm-grid">'+ c.field.map(function(x){ return miniHTML(x.key, {owner: ownerNameOfCard(x)}); }).join('') +'</div>';
+    }
+    h += '<div class="dstitle"><button class="minibtn" id="pileCheat">'+(pileCheat ? '隐藏对手剩余牌堆' : '查看对手剩余牌堆（作弊）')+'</button></div>';
+    if (pileCheat){
+      for (var j=1;j<TM.n;j++){ var c2 = TM.comb[j]; if (!c2 || c2.isBoss) continue;
+        h += '<div class="dstitle">'+c2.name+' 剩余牌堆（'+c2.deck.length+' 张）</div><div class="dm-grid">'+ (groupCards(c2.deck).map(miniCard).join('') || '<span style="color:#8ea2b4">（空）</span>') +'</div>'; }
+    }
+    return h;
+  }
+  function renderPile(tab){
+    if (tab){ pileTab = tab; pileCheat = false; }
+    var me = G.players.me, op = G.players.opp;
+    var h = pileTabsHTML();
+    if (pileTab === 'foe'){ h += foeBlock1v1(); }
+    else {
+      var deck = groupCards(me.deck), hand = groupCards(me.hand);
+      h += '<div class="dstitle">你的牌堆（未抽 '+me.deck.length+' 张）</div><div class="dm-grid">'+ (deck.length? deck.map(miniCard).join('') : '<span style="color:#8ea2b4">（空）</span>') +'</div>';
+      h += '<div class="dstitle">你的手牌（'+me.hand.length+' 张）</div><div class="dm-grid">'+ (hand.length? hand.map(miniCard).join('') : '<span style="color:#8ea2b4">（空）</span>') +'</div>';
+      if (me.field.length) h += '<div class="dstitle">场上（被动）</div><div class="dm-grid">'+ me.field.map(function(c){ return miniHTML(c.key, {owner: ownerNameOfCard(c)}); }).join('') +'</div>';
+      if (me.counters.length) h += '<div class="dstitle">场上（反制 · 盖牌）</div><div class="dm-grid">'+ me.counters.map(function(c){ return miniHTML(c.key, {owner: ownerNameOfCard(c)}); }).join('') +'</div>';
+    }
     document.getElementById('pmBody').innerHTML = h;
   }
-  function renderPileTeam(){
+  function renderPileTeam(tab){
     if (!TM) return;
-    var me = TM.comb[0], h = '';
-    h += '<div class="dstitle">你 · 牌堆（未抽 '+me.deck.length+' 张）</div><div class="dm-grid">'+(groupCards(me.deck).map(miniCard).join('')||'<span style="color:#8ea2b4">（空）</span>')+'</div>';
-    h += '<div class="dstitle">你 · 手牌（'+me.hand.length+' 张）</div><div class="dm-grid">'+(groupCards(me.hand).map(miniCard).join('')||'<span style="color:#8ea2b4">（空）</span>')+'</div>';
-    h += '<div class="dstitle">其余参战者</div>';
-    for (var i=1;i<TM.n;i++){ var c=TM.comb[i]; h += '<div class="statrow"><span>'+c.name+' · '+tmCharOf(c).name+'</span><span>手牌 '+c.hand.length+' · 牌堆 '+c.deck.length+' · '+(c.dead?'已倒下':c.hp+'/'+c.max)+'</span></div>'; }
+    if (tab){ pileTab = tab; pileCheat = false; }
+    var me = TM.comb[0], h = pileTabsHTML();
+    if (pileTab === 'foe'){ h += foeBlockTeam(); }
+    else {
+      h += '<div class="dstitle">你 · 牌堆（未抽 '+me.deck.length+' 张）</div><div class="dm-grid">'+(groupCards(me.deck).map(miniCard).join('')||'<span style="color:#8ea2b4">（空）</span>')+'</div>';
+      h += '<div class="dstitle">你 · 手牌（'+me.hand.length+' 张）</div><div class="dm-grid">'+(groupCards(me.hand).map(miniCard).join('')||'<span style="color:#8ea2b4">（空）</span>')+'</div>';
+      h += '<div class="dstitle">其余参战者</div>';
+      for (var i=1;i<TM.n;i++){ var c=TM.comb[i]; h += '<div class="statrow"><span>'+c.name+' · '+tmCharOf(c).name+'</span><span>手牌 '+c.hand.length+' · 牌堆 '+c.deck.length+' · '+(c.dead?'已倒下':c.hp+'/'+c.max)+'</span></div>'; }
+    }
     document.getElementById('pmBody').innerHTML = h;
   }
   document.getElementById('pmClose').addEventListener('click', function(){ document.getElementById('pileModal').classList.remove('on'); });
-  document.getElementById('drawpile').addEventListener('click', function(){ if (TM) renderPileTeam(); else renderPile(); document.getElementById('pileModal').classList.add('on'); });
+  document.getElementById('pmBody').addEventListener('click', function(e){
+    var t = e.target.closest && e.target.closest('[data-pile-tab]');
+    if (t){ if (TM) renderPileTeam(t.dataset.pileTab); else renderPile(t.dataset.pileTab); return; }
+    if (e.target.closest && e.target.closest('#pileCheat')){ pileCheat = !pileCheat; if (TM) renderPileTeam(); else renderPile(); }
+  });
+  document.getElementById('drawpile').addEventListener('click', function(){ if (TM) renderPileTeam('me'); else renderPile('me'); document.getElementById('pileModal').classList.add('on'); });
 
   document.getElementById('diffRow').addEventListener('click', function(e){
     var el = e.target.closest('.diffbtn'); if (!el) return;
@@ -4487,14 +4991,14 @@ var SPRITE_BAIZHUO = "sprites/baizhuo.png?h=a2ffd8ca";
     fc.innerHTML = '<div class="charart" style="width:100%;height:100%;margin:0;--main:'+ch.main+';--main-dark:'+ch.dark+'">'+bodyHTML(ch.body)+'</div>';
   }
   function renderOppGrid(){
-    document.getElementById('oppGrid').innerHTML = playableChars().map(function(ch){
+    document.getElementById('oppGrid').innerHTML = aiChars().map(function(ch){
       return '<div class="charcard'+(ch.id===oppChosen?' sel':'')+'" data-id="'+ch.id+'">'+
         '<div class="charart" style="--main:'+ch.main+';--main-dark:'+ch.dark+'">'+bodyHTML(ch.body)+'</div>'+
         '<div class="charname">'+ch.name+'</div><div class="chartag">'+ch.tag+'</div></div>';
     }).join('');
   }
   document.getElementById('oppRandomBtn').addEventListener('click', function(){
-    oppChosen = playableChars()[Math.floor(Math.random()*playableChars().length)].id;
+    oppChosen = aiChars()[Math.floor(Math.random()*aiChars().length)].id;
     renderOppRow();
   });
   document.getElementById('oppPickBtn').addEventListener('click', function(){
@@ -4521,7 +5025,7 @@ var SPRITE_BAIZHUO = "sprites/baizhuo.png?h=a2ffd8ca";
     fc.innerHTML = '<div class="charart" style="width:100%;height:100%;margin:0;--main:'+ch.main+';--main-dark:'+ch.dark+'">'+bodyHTML(ch.body)+'</div>';
   }
   function renderAllyGrid(){
-    document.getElementById('allyGrid').innerHTML = playableChars().filter(function(ch){ return ch.id !== (selId || chosenMe); }).map(function(ch){
+    document.getElementById('allyGrid').innerHTML = aiChars().filter(function(ch){ return ch.id !== (selId || chosenMe); }).map(function(ch){
       return '<div class="charcard'+(ch.id===allyChosen?' sel':'')+'" data-id="'+ch.id+'">'+
         '<div class="charart" style="--main:'+ch.main+';--main-dark:'+ch.dark+'">'+bodyHTML(ch.body)+'</div>'+
         '<div class="charname">'+ch.name+'</div><div class="chartag">'+ch.tag+'</div></div>';
@@ -4543,7 +5047,7 @@ var SPRITE_BAIZHUO = "sprites/baizhuo.png?h=a2ffd8ca";
   document.getElementById('startBtn').addEventListener('click', function(){
     if (!selId) return;
     chosenMe = selId;
-    var pick = oppChosen ? getChar(oppChosen) : playableChars()[Math.floor(Math.random()*playableChars().length)];
+    var pick = oppChosen ? getChar(oppChosen) : aiChars()[Math.floor(Math.random()*aiChars().length)];
     chosenOpp = pick.id;
     document.getElementById('select').classList.remove('on');
     if (chosenMode === 'team'){
@@ -4579,6 +5083,202 @@ var __sec = (location.protocol === 'https:') || ['localhost','127.0.0.1'].indexO
 if ('serviceWorker' in navigator && __sec){
   window.addEventListener('load', function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); });
 }
+</script>
+  <div class="tipbox" id="tipBox"></div>
+<div class="dragbar" id="dragBar">↑ 松 手 出 牌</div>
+  <div class="handtip" id="handTip">长按看效果 · 向上拖出牌</div>
+  <div class="cardpeek" id="cardPeek"></div>
+<script>
+/* ================= 状态/增益/减益 说明（点一下看解释） ================= */
+var TIP = {
+  burn:      ['灼烧', '对方每使用一张牌触发一次：伤害＝层数（穿刺），触发后层数减半。层数常驻。'],
+  vuln:      ['易伤', '每层让自己「每次受到的伤害 +1」；持续一个完整回合（双方半回合都结束后消失），可被净化。明最多 1 层。'],
+  healBuff:  ['治愈', '本半回合，自己每次回血额外 +N（N=层数，上限 2 层）。'],
+  ming:      ['明霞高灼', '明半回合开始时：把你在本大回合内受到的伤害加总，减 5，对对手造成等量伤害（普通伤害，可被护盾抵挡/闪避；从被动打出的那个半回合起生效）。'],
+  poison:    ['中毒', '半回合结束时结算：伤害＝层数，结算后层数减半。（可被闪避）'],
+  weak:      ['虚弱', '本半回合内，自己的非穿刺伤害每段 -1；半回合结束时递减 1 层。'],
+  lifeLoss:  ['生命损失', '每个完整回合结束时结算，无视护盾、无视闪避（最高等级 DoT）。'],
+  buff:      ['增伤', '本半回合内，自己造成的每一段伤害 +N。'],
+  reduce:    ['减伤', '本半回合内，自己受到的每一段伤害 -N。'],
+  shield:    ['护盾', '抵挡普通伤害；不能挡穿刺伤害，也不能挡生命损失。上限 30。'],
+  ap:        ['行动力', '每半回合的行动资源，打牌要消耗；半回合开始时回满（基础 3 点）。'],
+  dodge:     ['闪避', '对方半回合内有 N% 概率完全躲开一次攻击；可闪中毒/灼烧，不能闪生命损失。'],
+  frozen:    ['冰封', '冻结值满 3 → 下个半回合无法出牌（只能结束半回合）。'],
+  dawn:      ['破晓', '进入后 +1 增伤；期间每次受伤 -1、每次回血 -2。'],
+  nirvana:   ['寂灭', '本半回合的特殊状态，用于触发「逝梦极意」类卡的额外效果。'],
+  healCap:   ['禁疗', '受到的治疗被限制：本回合最多只能回 N 点。'],
+  counter:   ['反制', '盖牌放在场上（对手看不到内容），条件达成时自动触发并还击/回收。'],
+  passive:   ['被动', '打出后留在场上、永久生效，且不消耗行动力。'],
+  limiter:   ['限制器', '作用于对手的下半回合；一局可用 1～2 次（「封被」1 次），冷却 1 回合，免费。'],
+  kill:      ['斩杀', '无视一切机制，直接把血量归零（汲魂者：敌方 HP ≤8）。'],
+  lifesteal: ['嗜血', '常驻 30% 吸血，在自己的半回合结束时结算；生命 ≤10 时立即获得 +1 增伤。'],
+  soulLoss:  ['魂损', '对方的生命损失结算后不消失，保留一半层数（下回合继续扣）。'],
+  fenyan:    ['焚砚', '自己的半回合结束时清空剩余行动力，每清空 1 点 → 给对方 +3 层灼烧。'],
+  charge:    ['猎手', '每造成 2 次伤害，下一击转为穿刺。'],
+  trickster: ['机敏', '每受到 3 次攻击，抽 1 张牌。'],
+  gambler:   ['千术', '掷骰时 1、2 的出现概率降低；两颗骰子相同的概率减半。'],
+  mo:        ['汲能', '自己半回合内对敌方造成 ≥10 点伤害 → 吸取对方下个半回合的行动力。'],
+  radiant:   ['辉', '每受到对方 3 次攻击，回复 2 点血（DoT 不算）。'],
+  dancer:    ['舞', '非穿刺伤害打到护盾上时，伤害翻倍（护盾克星）。'],
+  venomPass: ['鸩毒', '每次攻击每段命中，给对方 +2 层中毒。'],
+  holy:      ['驰骋', '每回合获得 2 点护盾；对方每对自己造成 4 次伤害，回复 1 点血。'],
+  god:       ['超模', '每回合 +2 增伤 + 抽 2 张（内测角色）。'],
+  rage:      ['狂暴', 'BOSS 血量低于一半后，所有技能伤害 +3。'],
+  plague:    ['瘴噬', 'BOSS 血量 ≤30% 时，每次附加中毒有 40% 概率回复等额血量。'],
+  frost:     ['寒蚀', 'BOSS 每回合给全体玩家 +1 冻结值。'],
+  bless:     ['祝福', '闯关模式每关开始三选一，永久叠加。'],
+  noZero:    ['禁 0 费', '被「龙凌冰息」封锁：下回合不能用原始费用为 0 的牌。'],
+  healBlock: ['回血真空', '接下来 N 点回血无效（龙烬炎息：对方有冻结值时施加）。'],
+  scale:     ['鳞', '龙自己造成伤害后 +1 层蓄力；下一次攻击伤害 ×(1+层数)（含穿刺），用掉后层数清零；每个己方半回合开始 +1 护盾。']
+};
+function tipBoxEl(){ return document.getElementById('tipBox'); }
+function showTip(name, text){
+  var b = tipBoxEl(); if (!b) return;
+  b.innerHTML = '<div class="tbinner">' + (name ? '<div class="tbname">' + name + '</div>' : '')
+    + '<div class="tbtext">' + text + '</div><div class="tbclose">点任意处关闭</div></div>';
+  b.classList.add('on'); _tipT = Date.now();
+}
+function hideTip(){ var b = tipBoxEl(); if (b) b.classList.remove('on'); }
+var _tipT = 0;
+document.addEventListener('click', function(e){
+  var b = tipBoxEl();
+  if (b && b.classList.contains('on')){ if (Date.now() - _tipT > 180) hideTip(); e.stopPropagation(); e.preventDefault(); return; }
+  var el = e.target && e.target.closest ? e.target.closest('[data-tip]') : null;
+  if (!el) return;
+  var dt = el.getAttribute('data-tip') || '';
+  var i = dt.indexOf('|');
+  showTip(i > 0 ? dt.slice(0, i) : '', i > 0 ? dt.slice(i + 1) : dt);
+  e.stopPropagation(); e.preventDefault();
+}, true);
+</script>
+<script>
+/* ================= 点一下看大图 / 向上拖出牌（触摸 + 鼠标同一套逻辑） ================= */
+var TOUCH_UI = (navigator.maxTouchPoints > 0) || ('ontouchstart' in window);
+var DRAG_TH = 46;        // 向上拖过 46px = 出牌
+var _lastPtr = 0;        // 刚处理过 pointerup → 忽略随后的合成 click
+var _forcePlay = false;  // 程序触发 click（真出牌）时为 true
+
+var _peekT = 0;
+function peekBox(){ return document.getElementById('cardPeek'); }
+function hidePeek(){ var p = peekBox(); if (p) p.classList.remove('on'); }
+function showPeek(el){
+  var p = peekBox(); if (!p || !el) return;
+  var key = el.dataset.key; if (!key || !DEFS[key]) return;
+  var idx = (el.dataset.idx != null) ? parseInt(el.dataset.idx, 10) : -1;
+  var side = el.dataset.side || 'me';
+  var inTeam = !!(typeof TM !== 'undefined' && TM && !TM.over);
+  var pl = inTeam ? (side === 'me' ? TM.comb[0] : null) : (typeof G !== 'undefined' && G && G.players ? G.players[side] : null);
+  var o = {};
+  var chip = el.querySelector('.own-chip'); if (chip) o.owner = chip.textContent;                 // 沿用卡面上的归属
+  var cc = el.querySelector('.cc'); if (cc) o.cost = parseInt(cc.textContent, 10);                 // 沿用卡面上的费用（含折后/减费）
+  if (idx >= 0 && pl && pl.hand && pl.hand[idx] && pl.hand[idx].key === key){
+    o.cost = effCost(pl, DEFS[key]); o.cut = !!pl.costCut;
+    if (!o.owner) o.owner = ownerNameOfCard(pl.hand[idx]);
+  }
+  p.innerHTML = '<div class="pk">' + miniHTML(key, o) + '<div class="pkbar">点任意处关闭 · 出牌请长按后向上拖</div></div>';
+  p.classList.add('on'); _peekT = Date.now();
+}
+function handTipHide(){ var t = document.getElementById('handTip'); if (t) t.classList.add('hide'); }
+function dragBarOn(on){ var b = document.getElementById('dragBar'); if (b) b.classList.toggle('on', !!on); }
+function playFromHand(el){ _forcePlay = true; if (el) el.click(); _forcePlay = false; handTipHide(); hidePeek(); }
+
+(function(){
+  var box = document.getElementById('myHand');
+  if (!box) return;
+  var cur = null, y0 = 0, armed = false;
+  box.addEventListener('pointerdown', function(e){
+    var el = e.target.closest('.mini'); if (!el) return;
+    var p = peekBox(); if (p && p.classList.contains('on')) return;   // 大图打开时先关图
+    cur = el; y0 = e.clientY; armed = false;
+    el.classList.add('dragging');
+    el.style.transition = 'transform .1s ease-out';
+    el.style.transform = 'translateY(-4px) scale(1.04)';
+    try { el.setPointerCapture(e.pointerId); } catch(_){}
+    if (e.cancelable) e.preventDefault();
+  }, { passive: false });
+  box.addEventListener('pointermove', function(e){
+    if (!cur) return;
+    var up = Math.max(0, y0 - e.clientY);
+    cur.style.transform = 'translateY(' + (-Math.min(up, 100) - 4) + 'px) scale(' + (1.04 + Math.min(up, 90)/900) + ')';
+    var a = up >= DRAG_TH;
+    if (a !== armed){ armed = a; cur.classList.toggle('armed', a); dragBarOn(a); }
+    if (e.cancelable) e.preventDefault();
+  }, { passive: false });
+  function done(play){
+    if (!cur) return;
+    var el = cur; cur = null;
+    var a = armed; armed = false; dragBarOn(false);
+    el.classList.remove('armed'); el.style.transition = '';
+    _lastPtr = Date.now();
+    if (a && play){ el.classList.remove('dragging'); flyAway(el); }            // 出牌：向上飞走 + 其余牌收拢
+    else {                                                                     // 没拖够：回弹（看效果＝长按 1 秒）
+      el.classList.remove('dragging');
+      el.style.transition = 'transform .2s cubic-bezier(.22,.8,.3,1)';
+      el.style.transform = '';
+      setTimeout(function(){ el.style.transition = ''; el.style.transform = ''; }, 220);
+    }
+  }
+  // 出牌动画：卡片向上飞走淡出；同时其余手牌滑动收拢（FLIP）
+  function flyAway(el){
+    var box = document.getElementById('myHand');
+    var idx = parseInt(el.dataset.idx, 10);
+    var olds = [].slice.call(box.querySelectorAll('.mini')).map(function(x){ return x.getBoundingClientRect().left; });
+    var r = el.getBoundingClientRect();
+    var g = el.cloneNode(true);
+    g.classList.remove('dragging', 'armed');
+    g.classList.add('flying');
+    g.style.left = r.left + 'px'; g.style.top = r.top + 'px';
+    g.style.width = r.width + 'px'; g.style.height = r.height + 'px';
+    g.style.transform = 'translateY(0) scale(1.04)';
+    document.body.appendChild(g);
+    requestAnimationFrame(function(){
+      g.style.transform = 'translateY(-180px) scale(.9) rotate(-5deg)';
+      g.style.opacity = '0';
+    });
+    setTimeout(function(){ if (g.parentNode) g.parentNode.removeChild(g); }, 420);
+    playFromHand(el);                                     // 真正的出牌（会重建手牌）
+    var news = [].slice.call(box.querySelectorAll('.mini'));
+    news.forEach(function(x, j){
+      var oi = j < idx ? j : j + 1;                       // 新第 j 张 = 旧第 oi 张
+      var ox = olds[oi]; if (ox == null) return;
+      var d = ox - x.getBoundingClientRect().left;
+      if (Math.abs(d) < 0.5) return;
+      x.style.transition = 'none'; x.style.transform = 'translateX(' + d + 'px)';
+      requestAnimationFrame(function(){
+        x.classList.add('gather');
+        x.style.transition = ''; x.style.transform = '';
+        setTimeout(function(){ x.classList.remove('gather'); x.style.transform = ''; }, 320);
+      });
+    });
+  }
+  box.addEventListener('pointerup', function(){ done(true); });
+  box.addEventListener('pointercancel', function(){ done(false); });
+})();
+
+/* ---- 长按 1 秒 → 放大看牌的内容（手牌 / 卡组列表 / 牌堆 通用） ---- */
+var _lpTimer = null, _lpEl = null, _lpX = 0, _lpY = 0;
+function lpCancel(){ if (_lpTimer){ clearTimeout(_lpTimer); _lpTimer = null; } _lpEl = null; }
+document.addEventListener('pointerdown', function(e){
+  var el = e.target && e.target.closest ? e.target.closest('.mini') : null;
+  if (!el || el.dataset.key == null) return;
+  if (peekBox() && peekBox().classList.contains('on')) return;
+  lpCancel(); _lpEl = el; _lpX = e.clientX; _lpY = e.clientY;
+  _lpTimer = setTimeout(function(){
+    _lpTimer = null; var t = _lpEl; _lpEl = null;
+    if (t){ showPeek(t); try { if (navigator.vibrate) navigator.vibrate(15); } catch(_){} }
+  }, 1000);
+}, true);
+document.addEventListener('pointermove', function(e){
+  if (!_lpTimer) return;
+  if (Math.abs(e.clientX - _lpX) > 8 || Math.abs(e.clientY - _lpY) > 8) lpCancel();
+}, true);
+document.addEventListener('pointerup', lpCancel, true);
+document.addEventListener('pointercancel', lpCancel, true);
+(function(){
+  var p = peekBox();
+  if (p) p.addEventListener('click', function(){ if (Date.now() - _peekT > 350) hidePeek(); });   // 刚打开时不响应（避免触摸合成 click 秒关）
+  setTimeout(handTipHide, 15000);
+})();
 </script>
 </body>
 </html>
