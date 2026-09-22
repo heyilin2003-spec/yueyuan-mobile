@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>月圆之夜 · 联机通道测试</title>
 <style>
-  :root{ --bg:#0b1020; --panel:#141a30; --line:#2a3358; --txt:#e8ecff; --dim:#8b95c4; --acc:#7aa2ff; --ok:#4ade80; --bad:#ff6b6b; }
+  :root{ --bg:#0b1020; --panel:#141a30; --line:#2a3358; --txt:#e8ecff; --dim:#8b95c4; --acc:#7aa2ff; --ok:#4ade80; --bad:#ff6b6b; --warn:#f6c445; }
   *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   body{ margin:0; background:var(--bg); color:var(--txt); font:15px/1.5 -apple-system,"PingFang SC",sans-serif; padding:16px 14px 40px; }
   h1{ font-size:18px; margin:0 0 4px; }
@@ -14,12 +14,14 @@
   #status.on{ border-color:var(--ok); color:var(--ok); }
   #status.off{ border-color:var(--bad); color:var(--bad); }
   #note{ display:none; background:#1c2a1e; border:1px solid var(--ok); color:var(--ok); border-radius:10px; padding:10px 12px; margin-bottom:12px; font-size:13.5px; }
+  #note.warn{ background:#2a2413; border-color:var(--warn); color:var(--warn); }
   .cols{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
   @media (max-width:720px){ .cols{ grid-template-columns:1fr; } }
   .card{ background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:12px; }
   .card h2{ font-size:15px; margin:0 0 8px; }
   .card p{ color:var(--dim); font-size:12.5px; margin:0 0 8px; }
-  button{ width:100%; background:var(--acc); color:#08122b; border:0; border-radius:9px; padding:11px; font:600 14px/1 inherit; margin:4px 0; cursor:pointer; transition:transform .06s, filter .15s; }
+  .warnbox{ background:#241d10; border:1px solid #5a4a1c; color:var(--warn); border-radius:8px; padding:8px 10px; font-size:12.5px; margin:8px 0 4px; }
+  button{ width:100%; background:var(--acc); color:#08122b; border:0; border-radius:9px; padding:11px; font:600 14px/1 inherit; margin:4px 0; cursor:pointer; transition:transform .06s; }
   button:active{ transform:scale(.98); }
   button.ghost{ background:transparent; color:var(--acc); border:1px solid var(--line); }
   button:disabled{ opacity:.5; }
@@ -30,7 +32,7 @@
   .row{ display:flex; gap:8px; }
   .row button{ margin:4px 0; }
   #toast{ position:fixed; left:50%; top:50%; transform:translate(-50%,-40%); background:#1b2544; border:1.5px solid var(--acc); color:var(--txt);
-          padding:14px 20px; border-radius:14px; font:600 15px/1.4 -apple-system,"PingFang SC",sans-serif; z-index:99; max-width:82vw; text-align:center;
+          padding:14px 20px; border-radius:14px; font:600 15px/1.4 -apple-system,"PingFang SC",sans-serif; z-index:99; max-width:84vw; text-align:center;
           opacity:0; pointer-events:none; transition:opacity .18s, transform .18s; box-shadow:0 10px 30px rgba(0,0,0,.5); }
   #toast.show{ opacity:1; transform:translate(-50%,-50%) scale(1.02); }
   #toast.ok{ border-color:var(--ok); }
@@ -47,13 +49,14 @@
 <div class="cols">
   <div class="card">
     <h2>① 房主（发起方）</h2>
-    <p>点「创建邀请码」，再把 <b>邀请链接</b> 发给朋友（点开就带码，不用手动粘）。</p>
+    <p>点「创建邀请码」，把 <b>邀请链接</b> 发给朋友（点开就带码）。</p>
     <button id="hCreate">创建邀请码</button>
     <textarea id="hOffer" placeholder="邀请码会出现在这里"></textarea>
     <button class="ghost" id="hCopyOffer">复制邀请码</button>
     <button class="ghost" id="hCopyLink">复制邀请链接（推荐）</button>
-    <p style="margin-top:10px">朋友回传应答码后，粘到这里（用链接回来的会自动填）：</p>
-    <textarea id="hAnswer" placeholder="粘贴朋友回传的应答码"></textarea>
+    <div class="warnbox">⚠️ 创建后<b>别关、别刷新这个页面</b>（切到微信没事）。朋友的应答码拿回来后，粘到<b>本页</b>下面这个框里。</div>
+    <p style="margin-top:8px">粘贴朋友回传的应答码：</p>
+    <textarea id="hAnswer" placeholder="把朋友发来的应答码粘到这里"></textarea>
     <button id="hAccept">连接</button>
   </div>
 
@@ -62,9 +65,9 @@
     <p>把房主的邀请码粘进来（点链接进来的会自动填）。</p>
     <textarea id="gOffer" placeholder="粘贴房主的邀请码"></textarea>
     <button id="gCreate">生成应答码</button>
-    <textarea id="gAnswer" placeholder="把应答码回传给房主"></textarea>
-    <button class="ghost" id="gCopyAnswer">复制应答码</button>
-    <button class="ghost" id="gCopyLink">复制回复链接（推荐）</button>
+    <textarea id="gAnswer" placeholder="把应答码发回房主"></textarea>
+    <button class="ghost" id="gCopyAnswer">复制应答码（发回房主）</button>
+    <div class="warnbox">ℹ️ 把<b>应答码文字</b>发给房主，让他粘回原来那个页面（不要发页面链接）。</div>
   </div>
 </div>
 
@@ -72,7 +75,7 @@
   <button class="ghost" id="sendPing">发送测试消息</button>
 </div>
 <div id="log"></div>
-<p class="hint">连上后顶部会变绿「已连接 ✅」。切到微信发消息不会丢，码会自动保存在本机；只有刷新页面才需要重新走一遍。</p>
+<p class="hint">连上后顶部会变绿「已连接 ✅」。码会自动保存在本机；但刷新页面会重置连接，需要重新握手。</p>
 <div id="toast"></div>
 
 <script>
@@ -86,14 +89,14 @@ const $ = id => document.getElementById(id);
 const logEl = $('log');
 function log(m){ logEl.textContent += `[${new Date().toLocaleTimeString()}] ${m}\n`; logEl.scrollTop = logEl.scrollHeight; }
 function setStatus(t, cls){ const s=$('status'); s.textContent=t; s.className=cls||''; }
-function note(msg){ const n=$('note'); if(msg){ n.textContent = msg; n.style.display='block'; } else n.style.display='none'; }
+function note(msg, warn){ const n=$('note'); if(msg){ n.textContent = msg; n.style.display='block'; n.className = warn ? 'warn' : ''; } else n.style.display='none'; }
 function save(k, v){ try{ v ? localStorage.setItem(k, v) : localStorage.removeItem(k); }catch{} }
 function load(k){ try{ return localStorage.getItem(k); }catch{ return null; } }
 
 let toastTimer;
 function toast(msg, type){
   const t = $('toast'); t.textContent = msg; t.className = 'show' + (type ? ' ' + type : '');
-  clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.className = ''; }, 2000);
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.className = ''; }, type === 'bad' ? 3200 : 2000);
 }
 function flash(el){ if(!el) return; el.classList.add('flash'); setTimeout(()=>el.classList.remove('flash'), 900); }
 
@@ -104,7 +107,6 @@ async function copyText(str, label){
     toast('✅ 已复制' + label, 'ok'); log('已复制' + label);
     return true;
   }catch(e){
-    // 兼容模式（微信 / 非安全上下文常见）
     let ok = false;
     try{
       const ta = document.createElement('textarea');
@@ -136,13 +138,18 @@ async function enc(obj){
 }
 async function dec(code){
   code = (code||'').trim().replace(/\s+/g,'');
-  if(code.startsWith('raw:')) return JSON.parse(new TextDecoder().decode(b64d(code.slice(4))));
-  if(code.startsWith('gz:')){
+  if(!code) throw new Error('内容为空，请先粘贴对方的码');
+  let obj;
+  if(code.startsWith('raw:')) obj = JSON.parse(new TextDecoder().decode(b64d(code.slice(4))));
+  else if(code.startsWith('gz:')){
+    if(typeof DecompressionStream === 'undefined') throw new Error('你的浏览器太旧，不支持解压这段码');
     const ds = new DecompressionStream('gzip'); const w = ds.writable.getWriter();
     w.write(b64d(code.slice(3))); w.close();
-    return JSON.parse(new TextDecoder().decode(await new Response(ds.readable).arrayBuffer()));
+    obj = JSON.parse(new TextDecoder().decode(await new Response(ds.readable).arrayBuffer()));
   }
-  throw new Error('码格式不对（应以 gz: 或 raw: 开头）');
+  else throw new Error('这段码格式不对（开头应是 gz: 或 raw:）');
+  if(!obj || typeof obj !== 'object' || !obj.type) throw new Error('这段码无效，请确认复制完整');
+  return obj;
 }
 
 let pc = null, dc = null, role = '';
@@ -169,8 +176,14 @@ window.hostStart = async function(){
   await waitIce(pc);
   return await enc(pc.localDescription);
 };
-window.hostAccept = async function(answerCode){ await pc.setRemoteDescription(await dec(answerCode)); return 'ok'; };
+window.hostAccept = async function(answerCode){
+  if(!pc) throw new Error('这个页面没有进行中的房间：请回到你点过「创建邀请码」的那个页面，把应答码粘进去（不要新开页面）');
+  if(!answerCode || !(answerCode||'').trim()) throw new Error('请先粘贴朋友的应答码');
+  await pc.setRemoteDescription(await dec(answerCode));
+  return 'ok';
+};
 window.guestStart = async function(offerCode){
+  if(!offerCode || !(offerCode||'').trim()) throw new Error('请先粘贴房主的邀请码');
   role = '客人';
   pc = new RTCPeerConnection(ICE);
   pc.onconnectionstatechange = () => log('客人连接态: ' + pc.connectionState);
@@ -186,14 +199,25 @@ window.pcState = () => pc ? pc.connectionState : 'none';
 
 function linkFor(k, v){ return location.origin + location.pathname + '#' + k + '=' + encodeURIComponent(v); }
 
-(function init(){
+function applyHash(){
   const q = new URLSearchParams(location.hash.slice(1));
   const oUrl = q.get('o'), aUrl = q.get('a');
-  if(oUrl){ $('gOffer').value = oUrl; note('📨 收到邀请码，已自动填入「② 客人」。点「生成应答码」继续。'); log('从链接读入邀请码'); }
-  if(aUrl){ $('hAnswer').value = aUrl; note('📨 收到应答码，已自动填入「① 房主」。点「连接」继续。'); log('从链接读入应答码'); }
-  if(!oUrl){ const so = load(LS.offer); if(so){ $('hOffer').value = so; log('恢复上次的邀请码（本机保存）'); } }
-  if(!aUrl){ const sa = load(LS.answer); if(sa){ $('hAnswer').value = sa; log('恢复上次的应答码（本机保存）'); } }
+  let hit = false;
+  if(oUrl){ $('gOffer').value = oUrl; note('📨 收到邀请码，已自动填入「② 客人」。点「生成应答码」继续。'); log('从链接读入邀请码'); hit = true; }
+  if(aUrl){ $('hAnswer').value = aUrl;
+    if(pc) note('📨 收到应答码，已自动填入。点「连接」继续。');
+    else note('⚠️ 这个页面没有进行中的房间。请回到你点过「创建邀请码」的那个页面，把应答码粘进去。', true);
+    log('从链接读入应答码'); hit = true; }
+  return hit;
+}
+(function init(){
+  if(!applyHash()){
+    const so = load(LS.offer), sa = load(LS.answer);
+    if(so){ $('hOffer').value = so; log('恢复上次的邀请码（本机保存，但已失效，需重新创建）'); }
+    if(sa){ $('hAnswer').value = sa; log('恢复上次的应答码（本机保存）'); }
+  }
 })();
+window.addEventListener('hashchange', applyHash);
 
 // ---- UI ----
 $('hCreate').onclick = busy($('hCreate'), '生成中…', async () => {
@@ -209,17 +233,16 @@ $('hAccept').onclick = busy($('hAccept'), '连接中…', async () => {
   log('正在连接…');
   try{ await hostAccept($('hAnswer').value); save(LS.answer, $('hAnswer').value);
     log('已应用应答码，等待通道打开…'); toast('已应用应答码，等待连接…');
-  }catch(e){ log('出错: ' + e.message); toast('❌ 连接失败：' + e.message, 'bad'); }
+  }catch(e){ log('出错: ' + e.message); toast('❌ ' + e.message, 'bad'); }
 });
 $('gCreate').onclick = busy($('gCreate'), '生成中…', async () => {
   log('正在生成应答码…');
   try{ const c = await guestStart($('gOffer').value); $('gAnswer').value = c; save(LS.answer, c); flash($('gAnswer'));
     log('应答码已生成，长度 ' + c.length + ' 字符（已存本机）');
-    toast('✅ 应答码已生成！点下面「复制回复链接」发回房主', 'ok');
-  }catch(e){ log('出错: ' + e.message); toast('❌ 生成失败：' + e.message, 'bad'); }
+    toast('✅ 应答码已生成！点下面「复制应答码」发回房主', 'ok');
+  }catch(e){ log('出错: ' + e.message); toast('❌ ' + e.message, 'bad'); }
 });
 $('gCopyAnswer').onclick = () => copyText($('gAnswer').value, '应答码');
-$('gCopyLink').onclick   = () => copyText($('gAnswer').value ? linkFor('a', $('gAnswer').value) : '', '回复链接');
 $('sendPing').onclick = () => { const r = sendMsg('ping'); toast(r === 'sent' ? '已发送测试消息' : '⚠️ 还没连上，发不出去', r === 'sent' ? '' : 'bad'); };
 </script>
 </body>
