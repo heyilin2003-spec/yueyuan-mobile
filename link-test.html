@@ -10,9 +10,9 @@
   body{ margin:0; background:var(--bg); color:var(--txt); font:15px/1.5 -apple-system,"PingFang SC",sans-serif; padding:16px 14px 40px; }
   h1{ font-size:18px; margin:0 0 4px; }
   .sub{ color:var(--dim); font-size:13px; margin:0 0 14px; }
-  #status{ position:sticky; top:0; z-index:9; background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:10px 14px; margin-bottom:14px; font-weight:600; }
+  #status{ position:sticky; top:0; z-index:9; background:var(--panel); border:1.5px solid var(--line); border-radius:12px; padding:11px 14px; margin-bottom:14px; font-weight:600; }
   #status.on{ border-color:var(--ok); color:var(--ok); }
-  #status.off{ border-color:var(--bad); color:var(--bad); }
+  #status.warn{ border-color:var(--warn); color:var(--warn); }
   #note{ display:none; background:#1c2a1e; border:1px solid var(--ok); color:var(--ok); border-radius:10px; padding:10px 12px; margin-bottom:12px; font-size:13.5px; }
   #note.warn{ background:#2a2413; border-color:var(--warn); color:var(--warn); }
   .cols{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
@@ -25,6 +25,8 @@
   button:active{ transform:scale(.98); }
   button.ghost{ background:transparent; color:var(--acc); border:1px solid var(--line); }
   button:disabled{ opacity:.5; }
+  button.pulse{ animation:pulse 1s ease 2; }
+  @keyframes pulse{ 0%,100%{ box-shadow:0 0 0 0 rgba(122,162,255,.6); } 50%{ box-shadow:0 0 0 6px rgba(122,162,255,0); } }
   textarea{ width:100%; min-height:72px; background:#0a0f1e; color:var(--txt); border:1px solid var(--line); border-radius:9px; padding:8px; font:12px/1.45 ui-monospace,Menlo,monospace; resize:vertical; margin:4px 0; transition:border-color .2s, box-shadow .2s; }
   textarea.flash{ border-color:var(--ok); box-shadow:0 0 0 3px rgba(74,222,128,.25); }
   #log{ margin-top:14px; background:#070b16; border:1px solid var(--line); border-radius:10px; padding:10px; height:170px; overflow:auto; font:12px/1.5 ui-monospace,Menlo,monospace; color:var(--dim); white-space:pre-wrap; }
@@ -43,13 +45,13 @@
 <h1>月圆之夜 · 联机通道测试</h1>
 <p class="sub">零依赖 / 零服务器 · 浏览器原生 WebRTC 点对点。</p>
 
-<div id="status" class="off">未连接</div>
+<div id="status">未连接 · 还没有房间</div>
 <div id="note"></div>
 
 <div class="cols">
-  <div class="card">
+  <div class="card" id="hostCard">
     <h2>① 房主（发起方）</h2>
-    <p>点「创建邀请码」，把 <b>邀请链接</b> 发给朋友（点开就带码）。</p>
+    <p>点「创建邀请码」，再把 <b>邀请链接</b> 发给朋友（点开就带码）。</p>
     <button id="hCreate">创建邀请码</button>
     <textarea id="hOffer" placeholder="邀请码会出现在这里"></textarea>
     <button class="ghost" id="hCopyOffer">复制邀请码</button>
@@ -58,9 +60,10 @@
     <p style="margin-top:8px">粘贴朋友回传的应答码：</p>
     <textarea id="hAnswer" placeholder="把朋友发来的应答码粘到这里"></textarea>
     <button id="hAccept">连接</button>
+    <button class="ghost" id="showGuest" style="margin-top:10px">📥 我是客人，要加入朋友的房间</button>
   </div>
 
-  <div class="card">
+  <div class="card" id="guestCard" style="display:none">
     <h2>② 客人（加入方）</h2>
     <p>把房主的邀请码粘进来（点链接进来的会自动填）。</p>
     <textarea id="gOffer" placeholder="粘贴房主的邀请码"></textarea>
@@ -75,7 +78,7 @@
   <button class="ghost" id="sendPing">发送测试消息</button>
 </div>
 <div id="log"></div>
-<p class="hint">连上后顶部会变绿「已连接 ✅」。码会自动保存在本机；但刷新页面会重置连接，需要重新握手。</p>
+<p class="hint">码会自动保存在本机；但刷新页面会断开连接、需要重新握手。</p>
 <div id="toast"></div>
 
 <script>
@@ -89,6 +92,11 @@ const $ = id => document.getElementById(id);
 const logEl = $('log');
 function log(m){ logEl.textContent += `[${new Date().toLocaleTimeString()}] ${m}\n`; logEl.scrollTop = logEl.scrollHeight; }
 function setStatus(t, cls){ const s=$('status'); s.textContent=t; s.className=cls||''; }
+function updateStatus(){
+  if(dc && dc.readyState === 'open'){ setStatus('已连接 ✅（' + role + '）', 'on'); return; }
+  if(pc){ setStatus('未连接 · 房间已创建，等待对方…'); return; }
+  setStatus('未连接 · 还没有房间（先点「创建邀请码」）', 'warn');
+}
 function note(msg, warn){ const n=$('note'); if(msg){ n.textContent = msg; n.style.display='block'; n.className = warn ? 'warn' : ''; } else n.style.display='none'; }
 function save(k, v){ try{ v ? localStorage.setItem(k, v) : localStorage.removeItem(k); }catch{} }
 function load(k){ try{ return localStorage.getItem(k); }catch{ return null; } }
@@ -96,16 +104,16 @@ function load(k){ try{ return localStorage.getItem(k); }catch{ return null; } }
 let toastTimer;
 function toast(msg, type){
   const t = $('toast'); t.textContent = msg; t.className = 'show' + (type ? ' ' + type : '');
-  clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.className = ''; }, type === 'bad' ? 3200 : 2000);
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.className = ''; }, type === 'bad' ? 3400 : 2000);
 }
 function flash(el){ if(!el) return; el.classList.add('flash'); setTimeout(()=>el.classList.remove('flash'), 900); }
+function pulse(el){ if(!el) return; el.classList.add('pulse'); setTimeout(()=>el.classList.remove('pulse'), 2200); }
 
 async function copyText(str, label){
   if(!str){ toast('⚠️ 还没有内容可复制', 'bad'); return false; }
   try{
     await navigator.clipboard.writeText(str);
-    toast('✅ 已复制' + label, 'ok'); log('已复制' + label);
-    return true;
+    toast('✅ 已复制' + label, 'ok'); log('已复制' + label); return true;
   }catch(e){
     let ok = false;
     try{
@@ -154,8 +162,8 @@ async function dec(code){
 
 let pc = null, dc = null, role = '';
 function setupDC(){
-  dc.onopen = () => { setStatus('已连接 ✅（' + role + '）', 'on'); note(''); toast('🎉 已连接！通道打通', 'ok'); log(role + ' 数据通道已打开'); dc.send('hello from ' + role); };
-  dc.onclose = () => { setStatus('已断开', 'off'); toast('⚠️ 连接已断开', 'bad'); log('数据通道关闭'); };
+  dc.onopen = () => { updateStatus(); note(''); toast('🎉 已连接！通道打通', 'ok'); log(role + ' 数据通道已打开'); dc.send('hello from ' + role); };
+  dc.onclose = () => { updateStatus(); toast('⚠️ 连接已断开', 'bad'); log('数据通道关闭'); };
   dc.onerror = e => { log('数据通道错误: ' + (e.message||e)); };
   dc.onmessage = e => { log('收到: ' + e.data); if(e.data === 'ping') dc.send('pong from ' + role); };
 }
@@ -169,7 +177,7 @@ function waitIce(p){
 window.hostStart = async function(){
   role = '房主';
   pc = new RTCPeerConnection(ICE);
-  pc.onconnectionstatechange = () => log('房主连接态: ' + pc.connectionState);
+  pc.onconnectionstatechange = () => { updateStatus(); log('房主连接态: ' + pc.connectionState); };
   dc = pc.createDataChannel('game', { ordered:true });
   setupDC();
   await pc.setLocalDescription(await pc.createOffer());
@@ -177,7 +185,7 @@ window.hostStart = async function(){
   return await enc(pc.localDescription);
 };
 window.hostAccept = async function(answerCode){
-  if(!pc) throw new Error('这个页面没有进行中的房间：请回到你点过「创建邀请码」的那个页面，把应答码粘进去（不要新开页面）');
+  if(!pc) throw new Error('这个页面还没有房间：请先点「创建邀请码」（房间是在那一步建立的，刷新页面会丢）');
   if(!answerCode || !(answerCode||'').trim()) throw new Error('请先粘贴朋友的应答码');
   await pc.setRemoteDescription(await dec(answerCode));
   return 'ok';
@@ -186,7 +194,7 @@ window.guestStart = async function(offerCode){
   if(!offerCode || !(offerCode||'').trim()) throw new Error('请先粘贴房主的邀请码');
   role = '客人';
   pc = new RTCPeerConnection(ICE);
-  pc.onconnectionstatechange = () => log('客人连接态: ' + pc.connectionState);
+  pc.onconnectionstatechange = () => { updateStatus(); log('客人连接态: ' + pc.connectionState); };
   pc.ondatachannel = e => { dc = e.channel; setupDC(); };
   await pc.setRemoteDescription(await dec(offerCode));
   await pc.setLocalDescription(await pc.createAnswer());
@@ -198,31 +206,36 @@ window.dcState = () => dc ? dc.readyState : 'none';
 window.pcState = () => pc ? pc.connectionState : 'none';
 
 function linkFor(k, v){ return location.origin + location.pathname + '#' + k + '=' + encodeURIComponent(v); }
+function showGuest(on){
+  $('hostCard').style.display = on ? 'none' : '';
+  $('guestCard').style.display = on ? '' : 'none';
+  const o = new URLSearchParams(location.hash.slice(1)).get('o');
+  if(on && o){ $('gOffer').value = o; note('📨 收到邀请码，已自动填入。点「生成应答码」继续。'); }
+  else if(on){ note('把房主发来的邀请码粘进来，或点他发的邀请链接。'); }
+}
 
-function applyHash(){
+(function init(){
   const q = new URLSearchParams(location.hash.slice(1));
   const oUrl = q.get('o'), aUrl = q.get('a');
-  let hit = false;
-  if(oUrl){ $('gOffer').value = oUrl; note('📨 收到邀请码，已自动填入「② 客人」。点「生成应答码」继续。'); log('从链接读入邀请码'); hit = true; }
-  if(aUrl){ $('hAnswer').value = aUrl;
-    if(pc) note('📨 收到应答码，已自动填入。点「连接」继续。');
-    else note('⚠️ 这个页面没有进行中的房间。请回到你点过「创建邀请码」的那个页面，把应答码粘进去。', true);
-    log('从链接读入应答码'); hit = true; }
-  return hit;
-}
-(function init(){
-  if(!applyHash()){
+  if(oUrl){ showGuest(true); log('从链接读入邀请码（客人）'); }
+  else if(aUrl){
+    $('hAnswer').value = aUrl;
+    note('⚠️ 这种「回复链接」已不再使用。请让朋友把「应答码文字」发给你，粘回你点过「创建邀请码」的那个页面。', true);
+    log('收到旧的回复链接（已停用）');
+  } else {
     const so = load(LS.offer), sa = load(LS.answer);
-    if(so){ $('hOffer').value = so; log('恢复上次的邀请码（本机保存，但已失效，需重新创建）'); }
-    if(sa){ $('hAnswer').value = sa; log('恢复上次的应答码（本机保存）'); }
+    if(so){ $('hOffer').value = so; }
+    if(sa){ $('hAnswer').value = sa; }
+    if(so || sa) note('⚠️ 上次的房间已失效（刷新或关掉页面后连接会断开）。请重新点「创建邀请码」，把新的邀请链接发给朋友。', true);
   }
+  updateStatus();
 })();
-window.addEventListener('hashchange', applyHash);
+window.addEventListener('hashchange', () => { const q = new URLSearchParams(location.hash.slice(1)); if(q.get('o')) showGuest(true); });
 
 // ---- UI ----
 $('hCreate').onclick = busy($('hCreate'), '生成中…', async () => {
   log('正在生成邀请码…');
-  try{ const c = await hostStart(); $('hOffer').value = c; save(LS.offer, c); flash($('hOffer'));
+  try{ const c = await hostStart(); $('hOffer').value = c; save(LS.offer, c); flash($('hOffer')); note(''); updateStatus();
     log('邀请码已生成，长度 ' + c.length + ' 字符（已存本机）');
     toast('✅ 邀请码已生成！点下面「复制邀请链接」发给朋友', 'ok');
   }catch(e){ log('出错: ' + e.message); toast('❌ 生成失败：' + e.message, 'bad'); }
@@ -233,11 +246,12 @@ $('hAccept').onclick = busy($('hAccept'), '连接中…', async () => {
   log('正在连接…');
   try{ await hostAccept($('hAnswer').value); save(LS.answer, $('hAnswer').value);
     log('已应用应答码，等待通道打开…'); toast('已应用应答码，等待连接…');
-  }catch(e){ log('出错: ' + e.message); toast('❌ ' + e.message, 'bad'); }
+  }catch(e){ log('出错: ' + e.message); toast('❌ ' + e.message, 'bad'); pulse($('hCreate')); }
 });
+$('showGuest').onclick = () => showGuest(true);
 $('gCreate').onclick = busy($('gCreate'), '生成中…', async () => {
   log('正在生成应答码…');
-  try{ const c = await guestStart($('gOffer').value); $('gAnswer').value = c; save(LS.answer, c); flash($('gAnswer'));
+  try{ const c = await guestStart($('gOffer').value); $('gAnswer').value = c; save(LS.answer, c); flash($('gAnswer')); updateStatus();
     log('应答码已生成，长度 ' + c.length + ' 字符（已存本机）');
     toast('✅ 应答码已生成！点下面「复制应答码」发回房主', 'ok');
   }catch(e){ log('出错: ' + e.message); toast('❌ ' + e.message, 'bad'); }
