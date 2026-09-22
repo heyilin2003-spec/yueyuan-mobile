@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>月圆之夜 · 联机通道测试</title>
+<style>
+  :root{ --bg:#0b1020; --panel:#141a30; --line:#2a3358; --txt:#e8ecff; --dim:#8b95c4; --acc:#7aa2ff; --ok:#4ade80; --bad:#ff6b6b; }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body{ margin:0; background:var(--bg); color:var(--txt); font:15px/1.5 -apple-system,"PingFang SC",sans-serif; padding:16px 14px 40px; }
+  h1{ font-size:18px; margin:0 0 4px; }
+  .sub{ color:var(--dim); font-size:13px; margin:0 0 14px; }
+  #status{ position:sticky; top:0; z-index:9; background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:10px 14px; margin-bottom:14px; font-weight:600; }
+  #status.on{ border-color:var(--ok); color:var(--ok); }
+  #status.off{ border-color:var(--bad); color:var(--bad); }
+  .cols{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  @media (max-width:720px){ .cols{ grid-template-columns:1fr; } }
+  .card{ background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:12px; }
+  .card h2{ font-size:15px; margin:0 0 8px; }
+  .card p{ color:var(--dim); font-size:12.5px; margin:0 0 8px; }
+  button{ width:100%; background:var(--acc); color:#08122b; border:0; border-radius:9px; padding:10px; font:600 14px/1 inherit; margin:4px 0; cursor:pointer; }
+  button.ghost{ background:transparent; color:var(--acc); border:1px solid var(--line); }
+  button:disabled{ opacity:.45; }
+  textarea{ width:100%; min-height:78px; background:#0a0f1e; color:var(--txt); border:1px solid var(--line); border-radius:9px; padding:8px; font:12px/1.45 ui-monospace,Menlo,monospace; resize:vertical; margin:4px 0; }
+  #log{ margin-top:14px; background:#070b16; border:1px solid var(--line); border-radius:10px; padding:10px; height:190px; overflow:auto; font:12px/1.5 ui-monospace,Menlo,monospace; color:var(--dim); white-space:pre-wrap; }
+  .hint{ color:var(--dim); font-size:12px; margin-top:10px; }
+  .row{ display:flex; gap:8px; }
+  .row button{ margin:4px 0; }
+</style>
+</head>
+<body>
+<h1>月圆之夜 · 联机通道测试</h1>
+<p class="sub">零依赖 / 零服务器 · 浏览器原生 WebRTC 点对点。两人各开本页，复制粘贴邀请码即可连上。</p>
+
+<div id="status" class="off">未连接</div>
+
+<div class="cols">
+  <div class="card">
+    <h2>① 房主（发起方）</h2>
+    <p>先点「创建邀请码」，把码发给朋友。</p>
+    <button id="hCreate">创建邀请码</button>
+    <textarea id="hOffer" placeholder="邀请码会出现在这里，复制发给朋友"></textarea>
+    <button class="ghost" id="hCopyOffer">复制邀请码</button>
+    <p>朋友回传应答码后，粘到这里：</p>
+    <textarea id="hAnswer" placeholder="粘贴朋友回传的应答码"></textarea>
+    <button id="hAccept">连接</button>
+  </div>
+
+  <div class="card">
+    <h2>② 客人（加入方）</h2>
+    <p>先把房主的邀请码粘进来。</p>
+    <textarea id="gOffer" placeholder="粘贴房主的邀请码"></textarea>
+    <button id="gCreate">生成应答码</button>
+    <textarea id="gAnswer" placeholder="把这段应答码回传给房主"></textarea>
+    <button class="ghost" id="gCopyAnswer">复制应答码</button>
+  </div>
+</div>
+
+<div class="row" style="margin-top:12px">
+  <button class="ghost" id="sendPing">发送测试消息</button>
+</div>
+<div id="log"></div>
+<p class="hint">连上后双方顶部会变绿「已连接 ✅」，日志会显示 ping / pong 往来。</p>
+
+<script>
+const ICE = { iceServers: [
+  { urls: 'stun:stun.miwifi.com:3478' },
+  { urls: 'stun:stun.l.google.com:19302' },
+  { urls: 'stun:stun1.l.google.com:19302' }
+]};
+
+const $ = id => document.getElementById(id);
+const logEl = $('log');
+function log(m){ logEl.textContent += `[${new Date().toLocaleTimeString()}] ${m}\n`; logEl.scrollTop = logEl.scrollHeight; }
+function setStatus(t, cls){ const s=$('status'); s.textContent=t; s.className=cls||''; }
+
+const b64e = u8 => btoa(String.fromCharCode(...u8)).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+const b64d = s => Uint8Array.from(atob(s.replace(/-/g,'+').replace(/_/g,'/')), c=>c.charCodeAt(0));
+
+async function enc(obj){
+  const json = JSON.stringify(obj);
+  if(typeof CompressionStream === 'undefined') return 'raw:' + b64e(new TextEncoder().encode(json));
+  const cs = new CompressionStream('gzip');
+  const w = cs.writable.getWriter();
+  w.write(new TextEncoder().encode(json)); w.close();
+  const buf = await new Response(cs.readable).arrayBuffer();
+  return 'gz:' + b64e(new Uint8Array(buf));
+}
+async function dec(code){
+  code = (code||'').trim().replace(/\s+/g,'');
+  if(code.startsWith('raw:')) return JSON.parse(new TextDecoder().decode(b64d(code.slice(4))));
+  if(code.startsWith('gz:')){
+    const ds = new DecompressionStream('gzip');
+    const w = ds.writable.getWriter();
+    w.write(b64d(code.slice(3))); w.close();
+    const buf = await new Response(ds.readable).arrayBuffer();
+    return JSON.parse(new TextDecoder().decode(buf));
+  }
+  throw new Error('码格式不对（应以 gz: 或 raw: 开头）');
+}
+
+let pc = null, dc = null, role = '';
+
+function setupDC(){
+  dc.onopen = () => { setStatus('已连接 ✅（' + role + '）', 'on'); log(role + ' 数据通道已打开'); dc.send('hello from ' + role); };
+  dc.onclose = () => { setStatus('已断开', 'off'); log('数据通道关闭'); };
+  dc.onerror = e => log('数据通道错误: ' + (e.message||e));
+  dc.onmessage = e => {
+    log('收到: ' + e.data);
+    if(e.data === 'ping') dc.send('pong from ' + role);
+  };
+}
+function waitIce(p){
+  if(p.iceGatheringState === 'complete') return Promise.resolve();
+  return new Promise(res => {
+    let done = false;
+    const fin = () => { if(!done){ done = true; res(); } };
+    const t = setTimeout(fin, 4000);
+    p.addEventListener('icegatheringstatechange', () => { if(p.iceGatheringState === 'complete'){ clearTimeout(t); fin(); } });
+  });
+}
+
+// ---- 房主 ----
+window.hostStart = async function(){
+  role = '房主';
+  pc = new RTCPeerConnection(ICE);
+  pc.onconnectionstatechange = () => log('房主连接态: ' + pc.connectionState);
+  dc = pc.createDataChannel('game', { ordered:true });
+  setupDC();
+  await pc.setLocalDescription(await pc.createOffer());
+  await waitIce(pc);
+  return await enc(pc.localDescription);
+};
+window.hostAccept = async function(answerCode){
+  await pc.setRemoteDescription(await dec(answerCode));
+  return 'ok';
+};
+
+// ---- 客人 ----
+window.guestStart = async function(offerCode){
+  role = '客人';
+  pc = new RTCPeerConnection(ICE);
+  pc.onconnectionstatechange = () => log('客人连接态: ' + pc.connectionState);
+  pc.ondatachannel = e => { dc = e.channel; setupDC(); };
+  await pc.setRemoteDescription(await dec(offerCode));
+  await pc.setLocalDescription(await pc.createAnswer());
+  await waitIce(pc);
+  return await enc(pc.localDescription);
+};
+
+// ---- 测试用 ----
+window.sendMsg = m => { if(dc && dc.readyState === 'open'){ dc.send(m); return 'sent'; } return 'not-open'; };
+window.dcState = () => dc ? dc.readyState : 'none';
+window.pcState = () => pc ? pc.connectionState : 'none';
+
+// ---- UI 绑定 ----
+$('hCreate').onclick = async () => {
+  try{ $('hCreate').disabled = true; log('正在生成邀请码…'); const c = await hostStart(); $('hOffer').value = c;
+    log('邀请码已生成，长度 ' + c.length + ' 字符'); }catch(e){ log('出错: ' + e.message); $('hCreate').disabled = false; }
+};
+$('hCopyOffer').onclick = () => { if($('hOffer').value){ navigator.clipboard.writeText($('hOffer').value); log('已复制邀请码'); } };
+$('hAccept').onclick = async () => {
+  try{ log('正在连接…'); await hostAccept($('hAnswer').value); log('已应用应答码，等待通道打开…'); }catch(e){ log('出错: ' + e.message); }
+};
+$('gCreate').onclick = async () => {
+  try{ $('gCreate').disabled = true; log('正在生成应答码…'); const c = await guestStart($('gOffer').value); $('gAnswer').value = c;
+    log('应答码已生成，长度 ' + c.length + ' 字符，回传给房主'); }catch(e){ log('出错: ' + e.message); $('gCreate').disabled = false; }
+};
+$('gCopyAnswer').onclick = () => { if($('gAnswer').value){ navigator.clipboard.writeText($('gAnswer').value); log('已复制应答码'); } };
+$('sendPing').onclick = () => log('发送 ping → ' + sendMsg('ping'));
+</script>
+</body>
+</html>
